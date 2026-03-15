@@ -1,0 +1,107 @@
+@startuml SequenceReturnBook
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam sequence {
+    ArrowColor #555555
+    LifeLineBorderColor #333333
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantBorderColor #1565C0
+    ActorBorderColor #333333
+}
+
+title Return Book — Sequence Diagram
+
+actor Librarian as user
+participant "LibraTrackApp\n(CLI)" as cli #F5F5F5
+participant "ReturnBookCommand" as cmd #FFFDE7
+participant "BorrowService" as svc #E0F7FA
+participant "BookRepository" as bRepo #FFF3E0
+participant "BorrowRecordRepository" as brRepo #FFF3E0
+participant "MemberRepository" as mRepo #FFF3E0
+participant "FineCalculator" as calc #FCE4EC
+participant "FineRepository" as fRepo #FCE4EC
+participant "ReservationNotifier" as notifier #F3E5F5
+
+user -> cli : selects "7. Return Book"
+activate cli
+
+cli -> cmd : execute()
+activate cmd
+
+cmd -> cmd : read memberId, ISBN\nfrom stdin
+cmd -> svc : returnBook(memberId, isbn)
+activate svc
+
+svc -> bRepo : findByIsbn(isbn)
+activate bRepo
+bRepo --> svc : Book
+deactivate bRepo
+
+svc -> brRepo : findActiveByBookAndMember\n(bookId, memberId)
+activate brRepo
+brRepo --> svc : BorrowRecord
+deactivate brRepo
+
+svc -> svc : set returnDate = today\nset isReturned = true
+
+svc -> brRepo : update(record)
+activate brRepo
+brRepo --> svc
+deactivate brRepo
+
+svc -> bRepo : update(book)\n[availableCopies + 1]
+activate bRepo
+bRepo --> svc
+deactivate bRepo
+
+svc -> svc : calculate daysOverdue\n= today - dueDate
+
+alt daysOverdue > 0
+    svc -> mRepo : findById(memberId)
+    activate mRepo
+    mRepo --> svc : Member
+    deactivate mRepo
+
+    create calc
+    svc -> calc : new FineCalculator(memberType)
+
+    svc -> calc : calculate(daysOverdue)
+    activate calc
+    note right of calc
+        Strategy Pattern:
+        Student → ₹2/day
+        Faculty → ₹5/day
+    end note
+    calc --> svc : fineAmount
+    deactivate calc
+
+    svc -> fRepo : save(new Fine)
+    activate fRepo
+    fRepo --> svc : Fine
+    deactivate fRepo
+end
+
+svc -> notifier : notifyBookAvailable\n(bookId, bookTitle)
+activate notifier
+note right of notifier
+    Observer Pattern:
+    Checks pending reservations
+    and notifies first in queue
+end note
+notifier --> svc
+deactivate notifier
+
+svc --> cmd : ReturnResult\n(record, fineAmount, daysOverdue)
+deactivate svc
+
+alt daysOverdue > 0
+    cmd --> cli : "Overdue by X days.\nFine: ₹Y"
+else on time
+    cmd --> cli : "Returned on time.\nNo fine."
+end
+deactivate cmd
+
+cli --> user : display result
+deactivate cli
+
+@enduml

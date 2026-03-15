@@ -1,0 +1,73 @@
+@startuml ERDiagram
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam linetype ortho
+
+skinparam entity {
+    BackgroundColor #F9F9F9
+    BorderColor #333333
+}
+
+title LibraTrack — Entity Relationship Diagram
+
+entity "books" as books #E3F2FD {
+    * **id** : SERIAL <<PK>>
+    --
+    * title : VARCHAR(255)
+    * author : VARCHAR(255)
+    * isbn : VARCHAR(20) <<UNIQUE>>
+    genre : VARCHAR(100)
+    * total_copies : INT
+    * available_copies : INT
+}
+
+entity "members" as members #E8F5E9 {
+    * **id** : SERIAL <<PK>>
+    --
+    * name : VARCHAR(255)
+    email : VARCHAR(255)
+    phone : VARCHAR(20)
+    * member_type : VARCHAR(20)
+    is_active : BOOLEAN
+    created_at : TIMESTAMP
+}
+
+entity "borrow_records" as borrow #FFFDE7 {
+    * **id** : SERIAL <<PK>>
+    --
+    * //book_id// : INT <<FK>>
+    * //member_id// : INT <<FK>>
+    * issue_date : DATE
+    * due_date : DATE
+    return_date : DATE
+    is_returned : BOOLEAN
+}
+
+entity "reservations" as reservations #F3E5F5 {
+    * **id** : SERIAL <<PK>>
+    --
+    * //book_id// : INT <<FK>>
+    * //member_id// : INT <<FK>>
+    reserved_at : TIMESTAMP
+    notified : BOOLEAN
+    fulfilled : BOOLEAN
+}
+
+entity "fines" as fines #FCE4EC {
+    * **id** : SERIAL <<PK>>
+    --
+    * //borrow_record_id// : INT <<FK>>
+    * //member_id// : INT <<FK>>
+    * amount : DECIMAL(10,2)
+    is_paid : BOOLEAN
+    created_at : TIMESTAMP
+}
+
+books ||--o{ borrow : "1 book → many borrows"
+members ||--o{ borrow : "1 member → many borrows"
+books ||--o{ reservations : "1 book → many reservations"
+members ||--o{ reservations : "1 member → many reservations"
+borrow ||--o| fines : "1 borrow → 0..1 fine"
+members ||--o{ fines : "1 member → many fines"
+
+@enduml

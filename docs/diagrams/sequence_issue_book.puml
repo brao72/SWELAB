@@ -1,0 +1,96 @@
+@startuml SequenceIssueBook
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam sequence {
+    ArrowColor #555555
+    LifeLineBorderColor #333333
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantBorderColor #1565C0
+    ActorBorderColor #333333
+}
+
+title Issue Book — Sequence Diagram
+
+actor Librarian as user
+participant "LibraTrackApp\n(CLI)" as cli #F5F5F5
+participant "IssueBookCommand" as cmd #FFFDE7
+participant "BorrowService" as svc #E0F7FA
+participant "MemberRepository" as mRepo #FFF3E0
+participant "FineRepository" as fRepo #FCE4EC
+participant "BookRepository" as bRepo #FFF3E0
+participant "BorrowRecordRepository" as brRepo #FFF3E0
+
+user -> cli : selects "6. Issue Book"
+activate cli
+
+cli -> cmd : execute()
+activate cmd
+
+cmd -> cmd : read memberId, ISBN\nfrom stdin
+cmd -> svc : issueBook(memberId, isbn)
+activate svc
+
+svc -> mRepo : findById(memberId)
+activate mRepo
+mRepo --> svc : Member
+deactivate mRepo
+
+alt Member not found
+    svc --> cmd : throw IllegalArgumentException
+else Member inactive
+    svc --> cmd : throw IllegalStateException
+end
+
+svc -> fRepo : getTotalUnpaidByMemberId(memberId)
+activate fRepo
+fRepo --> svc : unpaidAmount
+deactivate fRepo
+
+alt unpaidAmount > ₹50
+    svc --> cmd : throw IllegalStateException\n"Clear fines first"
+end
+
+svc -> bRepo : findByIsbn(isbn)
+activate bRepo
+bRepo --> svc : Book
+deactivate bRepo
+
+alt Book not found
+    svc --> cmd : throw IllegalArgumentException
+end
+
+svc -> brRepo : findActiveByMemberId(memberId)
+activate brRepo
+brRepo --> svc : activeLoans[]
+deactivate brRepo
+
+alt activeLoans.size >= borrowLimit
+    svc --> cmd : throw IllegalStateException\n"Borrowing limit reached"
+end
+
+alt availableCopies <= 0
+    svc --> cmd : throw IllegalStateException\n"No copies available"
+end
+
+svc -> svc : create BorrowRecord\n(issueDate=today,\ndueDate=today+loanPeriod)
+
+svc -> brRepo : save(record)
+activate brRepo
+brRepo --> svc : saved record
+deactivate brRepo
+
+svc -> bRepo : update(book)\n[availableCopies - 1]
+activate bRepo
+bRepo --> svc
+deactivate bRepo
+
+svc --> cmd : BorrowRecord
+deactivate svc
+
+cmd --> cli : display success\n"Issue Date / Due Date"
+deactivate cmd
+
+cli --> user : "Book issued successfully!"
+deactivate cli
+
+@enduml

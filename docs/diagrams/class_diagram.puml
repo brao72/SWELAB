@@ -1,0 +1,381 @@
+@startuml ClassDiagram
+skinparam classAttributeIconSize 0
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam class {
+    BackgroundColor #F9F9F9
+    BorderColor #333333
+    ArrowColor #555555
+    FontSize 13
+}
+skinparam stereotype {
+    CBackgroundColor #E8F5E9
+}
+
+title LibraTrack — Class Diagram
+
+' ==================== COMMAND PATTERN ====================
+package "command" #FFFDE7 {
+    interface Command <<interface>> {
+        + execute(): void
+    }
+
+    class AddBookCommand {
+        - bookService: BookService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class SearchBookCommand {
+        - bookService: BookService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class ListBooksCommand {
+        - bookService: BookService
+        + execute(): void
+    }
+
+    class IssueBookCommand {
+        - borrowService: BorrowService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class ReturnBookCommand {
+        - borrowService: BorrowService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class ReserveBookCommand {
+        - borrowService: BorrowService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class RegisterMemberCommand {
+        - memberService: MemberService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class ListMembersCommand {
+        - memberService: MemberService
+        + execute(): void
+    }
+
+    class MemberHistoryCommand {
+        - borrowService: BorrowService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class ViewFinesCommand {
+        - fineService: FineService
+        - scanner: Scanner
+        + execute(): void
+    }
+
+    class PayFineCommand {
+        - fineService: FineService
+        - scanner: Scanner
+        + execute(): void
+    }
+}
+
+Command <|.. AddBookCommand
+Command <|.. SearchBookCommand
+Command <|.. ListBooksCommand
+Command <|.. IssueBookCommand
+Command <|.. ReturnBookCommand
+Command <|.. ReserveBookCommand
+Command <|.. RegisterMemberCommand
+Command <|.. ListMembersCommand
+Command <|.. MemberHistoryCommand
+Command <|.. ViewFinesCommand
+Command <|.. PayFineCommand
+
+' ==================== MODELS ====================
+package "model" #E3F2FD {
+    enum MemberType {
+        STUDENT
+        FACULTY
+    }
+
+    abstract class Member {
+        - id: int
+        - name: String
+        - email: String
+        - phone: String
+        - memberType: MemberType
+        - isActive: boolean
+        - createdAt: LocalDateTime
+        + {abstract} getBorrowLimit(): int
+        + {abstract} getLoanPeriodDays(): int
+    }
+
+    class Student {
+        - BORROW_LIMIT: int = 3
+        - LOAN_PERIOD_DAYS: int = 14
+        + getBorrowLimit(): int
+        + getLoanPeriodDays(): int
+    }
+
+    class Faculty {
+        - BORROW_LIMIT: int = 5
+        - LOAN_PERIOD_DAYS: int = 30
+        + getBorrowLimit(): int
+        + getLoanPeriodDays(): int
+    }
+
+    class Book {
+        - id: int
+        - title: String
+        - author: String
+        - isbn: String
+        - genre: String
+        - totalCopies: int
+        - availableCopies: int
+    }
+
+    class BorrowRecord {
+        - id: int
+        - bookId: int
+        - memberId: int
+        - issueDate: LocalDate
+        - dueDate: LocalDate
+        - returnDate: LocalDate
+        - isReturned: boolean
+    }
+
+    class Reservation {
+        - id: int
+        - bookId: int
+        - memberId: int
+        - reservedAt: LocalDateTime
+        - notified: boolean
+        - fulfilled: boolean
+    }
+
+    class Fine {
+        - id: int
+        - borrowRecordId: int
+        - memberId: int
+        - amount: double
+        - isPaid: boolean
+        - createdAt: LocalDateTime
+    }
+}
+
+Member <|-- Student
+Member <|-- Faculty
+Member --> MemberType
+
+' ==================== FACTORY PATTERN ====================
+package "factory" #E8F5E9 {
+    class MemberFactory {
+        + {static} createMember(type, name, email, phone): Member
+    }
+}
+
+MemberFactory ..> Member : creates
+MemberFactory ..> MemberType : uses
+
+' ==================== STRATEGY PATTERN ====================
+package "strategy" #FCE4EC {
+    interface FineStrategy <<interface>> {
+        + calculate(daysOverdue: long): double
+    }
+
+    class StudentFineStrategy {
+        - RATE_PER_DAY: double = 2.0
+        + calculate(daysOverdue: long): double
+    }
+
+    class FacultyFineStrategy {
+        - RATE_PER_DAY: double = 5.0
+        + calculate(daysOverdue: long): double
+    }
+
+    class FineCalculator {
+        - strategy: FineStrategy
+        + FineCalculator(memberType: MemberType)
+        + calculate(daysOverdue: long): double
+    }
+}
+
+FineStrategy <|.. StudentFineStrategy
+FineStrategy <|.. FacultyFineStrategy
+FineCalculator --> FineStrategy : uses
+
+' ==================== OBSERVER PATTERN ====================
+package "observer" #F3E5F5 {
+    interface BookAvailabilityObserver <<interface>> {
+        + onBookAvailable(bookId: int, bookTitle: String): void
+    }
+
+    class ReservationNotifier {
+        - observers: List<BookAvailabilityObserver>
+        - reservationRepo: ReservationRepository
+        + addObserver(observer): void
+        + removeObserver(observer): void
+        + notifyBookAvailable(bookId, bookTitle): void
+    }
+}
+
+ReservationNotifier --> BookAvailabilityObserver : notifies
+
+' ==================== REPOSITORY LAYER ====================
+package "repository" #FFF3E0 {
+    interface BookRepository <<interface>> {
+        + save(book): Book
+        + findById(id): Optional<Book>
+        + findByIsbn(isbn): Optional<Book>
+        + search(keyword): List<Book>
+        + findAll(): List<Book>
+        + update(book): void
+        + delete(id): void
+    }
+
+    interface MemberRepository <<interface>> {
+        + save(member): Member
+        + findById(id): Optional<Member>
+        + findAll(): List<Member>
+        + update(member): void
+    }
+
+    interface BorrowRecordRepository <<interface>> {
+        + save(record): BorrowRecord
+        + findActiveByBookAndMember(bookId, memberId): Optional
+        + findActiveByMemberId(memberId): List
+        + findByMemberId(memberId): List
+        + update(record): void
+    }
+
+    interface FineRepository <<interface>> {
+        + save(fine): Fine
+        + findUnpaidByMemberId(memberId): List<Fine>
+        + update(fine): void
+        + getTotalUnpaidByMemberId(memberId): double
+    }
+
+    interface ReservationRepository <<interface>> {
+        + save(reservation): Reservation
+        + findPendingByBookId(bookId): List
+        + findByMemberId(memberId): List
+        + update(reservation): void
+    }
+}
+
+package "repository.impl" #FFF8E1 {
+    class PgBookRepository
+    class PgMemberRepository
+    class PgBorrowRecordRepository
+    class PgFineRepository
+    class PgReservationRepository
+}
+
+BookRepository <|.. PgBookRepository
+MemberRepository <|.. PgMemberRepository
+BorrowRecordRepository <|.. PgBorrowRecordRepository
+FineRepository <|.. PgFineRepository
+ReservationRepository <|.. PgReservationRepository
+
+' ==================== SERVICE LAYER ====================
+package "service" #E0F7FA {
+    class BookService {
+        - bookRepo: BookRepository
+        + addBook(...): Book
+        + searchBooks(keyword): List<Book>
+        + listAllBooks(): List<Book>
+        + findByIsbn(isbn): Optional<Book>
+        + removeBook(id): void
+    }
+
+    class MemberService {
+        - memberRepo: MemberRepository
+        + registerMember(type, name, email, phone): Member
+        + findById(id): Optional<Member>
+        + listAllMembers(): List<Member>
+        + deactivateMember(id): void
+    }
+
+    class BorrowService {
+        - bookRepo: BookRepository
+        - memberRepo: MemberRepository
+        - borrowRepo: BorrowRecordRepository
+        - reservationRepo: ReservationRepository
+        - fineRepo: FineRepository
+        - notifier: ReservationNotifier
+        + issueBook(memberId, isbn): BorrowRecord
+        + returnBook(memberId, isbn): ReturnResult
+        + reserveBook(memberId, isbn): Reservation
+        + getMemberHistory(memberId): List
+    }
+
+    class FineService {
+        - fineRepo: FineRepository
+        + getUnpaidFines(memberId): List<Fine>
+        + getTotalUnpaid(memberId): double
+        + payFine(fineId, unpaidFines): void
+    }
+}
+
+BookService --> BookRepository
+MemberService --> MemberRepository
+BorrowService --> BookRepository
+BorrowService --> MemberRepository
+BorrowService --> BorrowRecordRepository
+BorrowService --> FineRepository
+BorrowService --> ReservationNotifier
+FineService --> FineRepository
+
+' ==================== SINGLETON ====================
+package "db" #EFEBE9 {
+    class DatabaseConnection <<Singleton>> {
+        - {static} instance: DatabaseConnection
+        - dataSource: HikariDataSource
+        - DatabaseConnection(url, user, password)
+        + {static} getInstance(): DatabaseConnection
+        + {static} initialize(url, user, password): void
+        + getConnection(): Connection
+        + close(): void
+    }
+}
+
+' ==================== CLI ====================
+package "cli" #F5F5F5 {
+    class LibraTrackApp {
+        - commands: Map<String, Command>
+        - scanner: Scanner
+        + {static} main(args): void
+        + run(): void
+        - initDatabase(): void
+        - initSchema(): void
+        - initCommands(): void
+        - mainLoop(): void
+        - printMenu(): void
+    }
+}
+
+LibraTrackApp --> Command : dispatches
+LibraTrackApp --> DatabaseConnection : initializes
+
+' ==================== CROSS-PACKAGE RELATIONSHIPS ====================
+AddBookCommand --> BookService
+SearchBookCommand --> BookService
+ListBooksCommand --> BookService
+IssueBookCommand --> BorrowService
+ReturnBookCommand --> BorrowService
+ReserveBookCommand --> BorrowService
+MemberHistoryCommand --> BorrowService
+RegisterMemberCommand --> MemberService
+ListMembersCommand --> MemberService
+ViewFinesCommand --> FineService
+PayFineCommand --> FineService
+
+BorrowService --> FineCalculator : creates
+
+@enduml

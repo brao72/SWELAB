@@ -1,0 +1,70 @@
+@startuml SequenceReserveBook
+skinparam shadowing true
+skinparam roundcorner 10
+skinparam sequence {
+    ArrowColor #555555
+    LifeLineBorderColor #333333
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantBorderColor #1565C0
+    ActorBorderColor #333333
+}
+
+title Reserve Book — Sequence Diagram
+
+actor Librarian as user
+participant "LibraTrackApp\n(CLI)" as cli #F5F5F5
+participant "ReserveBookCommand" as cmd #FFFDE7
+participant "BorrowService" as svc #E0F7FA
+participant "MemberRepository" as mRepo #FFF3E0
+participant "BookRepository" as bRepo #FFF3E0
+participant "ReservationRepository" as rRepo #F3E5F5
+
+user -> cli : selects "8. Reserve Book"
+activate cli
+
+cli -> cmd : execute()
+activate cmd
+
+cmd -> cmd : read memberId, ISBN\nfrom stdin
+cmd -> svc : reserveBook(memberId, isbn)
+activate svc
+
+svc -> mRepo : findById(memberId)
+activate mRepo
+mRepo --> svc : Member
+deactivate mRepo
+
+alt Member not found
+    svc --> cmd : throw IllegalArgumentException
+end
+
+svc -> bRepo : findByIsbn(isbn)
+activate bRepo
+bRepo --> svc : Book
+deactivate bRepo
+
+alt Book not found
+    svc --> cmd : throw IllegalArgumentException
+end
+
+alt availableCopies > 0
+    svc --> cmd : throw IllegalStateException\n"Book is available —\nissue directly"
+end
+
+svc -> svc : create Reservation\n(bookId, memberId,\nreservedAt=now)
+
+svc -> rRepo : save(reservation)
+activate rRepo
+rRepo --> svc : saved Reservation
+deactivate rRepo
+
+svc --> cmd : Reservation
+deactivate svc
+
+cmd --> cli : "Reservation created!\nID: X"
+deactivate cmd
+
+cli --> user : "You'll be notified\nwhen available"
+deactivate cli
+
+@enduml
