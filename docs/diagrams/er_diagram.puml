@@ -63,6 +63,15 @@ entity "fines" as fines #FCE4EC {
     created_at : TIMESTAMP
 }
 
+entity "librarians" as librarians #FFF9C4 {
+    * **id** : SERIAL <<PK>>
+    --
+    * username : VARCHAR(100) <<UNIQUE>>
+    * password_hash : VARCHAR(64)
+    * name : VARCHAR(255)
+    created_at : TIMESTAMP
+}
+
 books ||--o{ borrow : "1 book → many borrows"
 members ||--o{ borrow : "1 member → many borrows"
 books ||--o{ reservations : "1 book → many reservations"

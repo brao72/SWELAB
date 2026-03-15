@@ -167,11 +167,34 @@ package "model" #E3F2FD {
         - isPaid: boolean
         - createdAt: LocalDateTime
     }
+
+    class Librarian {
+        - id: int
+        - username: String
+        - passwordHash: String
+        - name: String
+        - createdAt: LocalDateTime
+    }
+
+    enum Role {
+        LIBRARIAN
+        MEMBER
+    }
+
+    class Session {
+        - role: Role
+        - userId: int
+        - displayName: String
+        + getRole(): Role
+        + getUserId(): int
+        + getDisplayName(): String
+    }
 }
 
 Member <|-- Student
 Member <|-- Faculty
 Member --> MemberType
+Session --> Role
 
 ' ==================== FACTORY PATTERN ====================
 package "factory" #E8F5E9 {
@@ -267,6 +290,12 @@ package "repository" #FFF3E0 {
         + findByMemberId(memberId): List
         + update(reservation): void
     }
+
+    interface LibrarianRepository <<interface>> {
+        + save(librarian): Librarian
+        + findByUsername(username): Optional<Librarian>
+        + count(): long
+    }
 }
 
 package "repository.impl" #FFF8E1 {
@@ -275,6 +304,7 @@ package "repository.impl" #FFF8E1 {
     class PgBorrowRecordRepository
     class PgFineRepository
     class PgReservationRepository
+    class PgLibrarianRepository
 }
 
 BookRepository <|.. PgBookRepository
@@ -282,6 +312,7 @@ MemberRepository <|.. PgMemberRepository
 BorrowRecordRepository <|.. PgBorrowRecordRepository
 FineRepository <|.. PgFineRepository
 ReservationRepository <|.. PgReservationRepository
+LibrarianRepository <|.. PgLibrarianRepository
 
 ' ==================== SERVICE LAYER ====================
 package "service" #E0F7FA {
@@ -321,6 +352,16 @@ package "service" #E0F7FA {
         + getTotalUnpaid(memberId): double
         + payFine(fineId, unpaidFines): void
     }
+
+    class AuthService {
+        - librarianRepo: LibrarianRepository
+        - memberRepo: MemberRepository
+        + loginLibrarian(username, password): Session
+        + loginMember(memberId): Session
+        + registerLibrarian(username, password, name): Librarian
+        + hasAnyLibrarian(): boolean
+        + {static} hashPassword(password): String
+    }
 }
 
 BookService --> BookRepository
@@ -331,6 +372,8 @@ BorrowService --> BorrowRecordRepository
 BorrowService --> FineRepository
 BorrowService --> ReservationNotifier
 FineService --> FineRepository
+AuthService --> LibrarianRepository
+AuthService --> MemberRepository
 
 ' ==================== SINGLETON ====================
 package "db" #EFEBE9 {
@@ -350,18 +393,24 @@ package "cli" #F5F5F5 {
     class LibraTrackApp {
         - commands: Map<String, Command>
         - scanner: Scanner
+        - authService: AuthService
         + {static} main(args): void
         + run(): void
         - initDatabase(): void
         - initSchema(): void
-        - initCommands(): void
-        - mainLoop(): void
-        - printMenu(): void
+        - initServices(): void
+        - seedDefaultLibrarian(): void
+        - loginLoop(): void
+        - initCommands(session: Session): void
+        - mainLoop(session: Session): void
+        - printMenu(session: Session): void
     }
 }
 
 LibraTrackApp --> Command : dispatches
 LibraTrackApp --> DatabaseConnection : initializes
+LibraTrackApp --> AuthService : authenticates
+LibraTrackApp --> Session : manages
 
 ' ==================== CROSS-PACKAGE RELATIONSHIPS ====================
 AddBookCommand --> BookService
