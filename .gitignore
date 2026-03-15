@@ -1,0 +1,8 @@
+context.md
+target/
+*.class
+*.jar
+.idea/
+*.iml
+.DS_Store
+CLAUDE.md
