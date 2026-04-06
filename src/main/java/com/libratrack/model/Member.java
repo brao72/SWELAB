@@ -1,14 +1,33 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "members")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "member_type", discriminatorType = DiscriminatorType.STRING)
 public abstract class Member {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(nullable = false)
     private String name;
+
     private String email;
+
+    @Column(length = 20)
     private String phone;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_type", insertable = false, updatable = false)
     private MemberType memberType;
+
+    @Column(name = "is_active")
     private boolean isActive;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Member(String name, String email, String phone, MemberType memberType) {

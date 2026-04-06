@@ -1,14 +1,31 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
+@Entity
+@Table(name = "borrow_records")
 public class BorrowRecord {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "book_id")
     private int bookId;
+
+    @Column(name = "member_id")
     private int memberId;
+
+    @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
+
+    @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
+
+    @Column(name = "return_date")
     private LocalDate returnDate;
+
+    @Column(name = "is_returned")
     private boolean isReturned;
 
     public BorrowRecord() {}

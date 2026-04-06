@@ -1,12 +1,25 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "librarians")
 public class Librarian {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(unique = true, nullable = false, length = 100)
     private String username;
+
+    @Column(name = "password_hash", nullable = false, length = 64)
     private String passwordHash;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Librarian() {}

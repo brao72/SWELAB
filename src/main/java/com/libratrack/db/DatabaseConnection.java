@@ -1,23 +1,22 @@
 package com.libratrack.db;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DatabaseConnection {
     private static DatabaseConnection instance;
-    private final HikariDataSource dataSource;
+    private final EntityManagerFactory emf;
 
     private DatabaseConnection(String url, String user, String password) {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(url);
-        config.setUsername(user);
-        config.setPassword(password);
-        config.setMaximumPoolSize(5);
-        config.setMinimumIdle(1);
-        this.dataSource = new HikariDataSource(config);
+        Map<String, String> props = new HashMap<>();
+        props.put("jakarta.persistence.jdbc.url", url);
+        props.put("jakarta.persistence.jdbc.user", user);
+        props.put("jakarta.persistence.jdbc.password", password);
+        this.emf = Persistence.createEntityManagerFactory("libratrack", props);
     }
 
     public static synchronized DatabaseConnection getInstance() {
@@ -33,13 +32,13 @@ public class DatabaseConnection {
         }
     }
 
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+    public EntityManager getEntityManager() {
+        return emf.createEntityManager();
     }
 
     public void close() {
-        if (dataSource != null) {
-            dataSource.close();
+        if (emf != null && emf.isOpen()) {
+            emf.close();
         }
     }
 }

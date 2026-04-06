@@ -1,12 +1,30 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "books")
 public class Book {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private String author;
+
+    @Column(unique = true, nullable = false, length = 20)
     private String isbn;
+
+    @Column(length = 100)
     private String genre;
+
+    @Column(name = "total_copies", nullable = false)
     private int totalCopies;
+
+    @Column(name = "available_copies", nullable = false)
     private int availableCopies;
 
     public Book() {}

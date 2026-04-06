@@ -1,13 +1,28 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "fines")
 public class Fine {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "borrow_record_id")
     private int borrowRecordId;
+
+    @Column(name = "member_id")
     private int memberId;
+
+    @Column(nullable = false)
     private double amount;
+
+    @Column(name = "is_paid")
     private boolean isPaid;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public Fine() {}

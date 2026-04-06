@@ -1,5 +1,10 @@
 package com.libratrack.model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("FACULTY")
 public class Faculty extends Member {
     private static final int BORROW_LIMIT = 5;
     private static final int LOAN_PERIOD_DAYS = 30;

@@ -1,13 +1,26 @@
 package com.libratrack.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "reservations")
 public class Reservation {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "book_id")
     private int bookId;
+
+    @Column(name = "member_id")
     private int memberId;
+
+    @Column(name = "reserved_at")
     private LocalDateTime reservedAt;
+
     private boolean notified;
+
     private boolean fulfilled;
 
     public Reservation() {}
