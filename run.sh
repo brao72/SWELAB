@@ -1,2 +1,3 @@
 #!/bin/bash
-java -jar target/libratrack-1.0-SNAPSHOT.jar
+mvn clean compile exec:java -Dexec.mainClass="com.libratrack.api.ApiServer"
+
