@@ -2,7 +2,6 @@ package com.libratrack.service;
 
 import com.libratrack.model.*;
 import com.libratrack.repository.MemberRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,63 +29,52 @@ class MemberServiceTest {
     }
 
     @Test
-    void registerStudentMember() {
-        when(memberRepo.save(any(Member.class))).thenAnswer(inv -> {
-            Member m = inv.getArgument(0);
-            m.setId(1);
-            return m;
-        });
+    void registerStudent_success() {
+        when(memberRepo.save(any(Member.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Member result = memberService.registerMember(MemberType.STUDENT, "Alice", "alice@uni.edu", "123");
+        Member member = memberService.registerMember(MemberType.STUDENT, "Alice", "alice@u.edu", "123");
 
-        assertInstanceOf(Student.class, result);
-        assertEquals(1, result.getId());
-        verify(memberRepo).save(any(Member.class));
+        assertInstanceOf(Student.class, member);
+        assertEquals("Alice", member.getName());
+        verify(memberRepo).save(any(Student.class));
     }
 
     @Test
-    void registerFacultyMember() {
-        when(memberRepo.save(any(Member.class))).thenAnswer(inv -> {
-            Member m = inv.getArgument(0);
-            m.setId(2);
-            return m;
-        });
+    void registerFaculty_success() {
+        when(memberRepo.save(any(Member.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Member result = memberService.registerMember(MemberType.FACULTY, "Dr. Bob", "bob@uni.edu", "456");
+        Member member = memberService.registerMember(MemberType.FACULTY, "Dr. X", "x@u.edu", "456");
 
-        assertInstanceOf(Faculty.class, result);
-        assertEquals(2, result.getId());
+        assertInstanceOf(Faculty.class, member);
+        verify(memberRepo).save(any(Faculty.class));
     }
 
     @Test
-    void findByIdReturnsExistingMember() {
-        Student student = new Student("Alice", "alice@uni.edu", "123");
-        student.setId(1);
+    void findById_found() {
+        Student student = new Student("A", "a@b.com", "123");
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
         assertTrue(memberService.findById(1).isPresent());
     }
 
     @Test
-    void findByIdReturnsEmptyForMissing() {
+    void findById_notFound() {
         when(memberRepo.findById(99)).thenReturn(Optional.empty());
+
         assertTrue(memberService.findById(99).isEmpty());
     }
 
     @Test
-    void listAllMembers() {
-        when(memberRepo.findAll()).thenReturn(List.of(
-                new Student("A", "a@b.c", "1"),
-                new Faculty("B", "b@c.d", "2")
-        ));
+    void listAllMembers_delegatesToRepo() {
+        when(memberRepo.findAll()).thenReturn(List.of(new Student("A", "a@b.com", "1")));
 
-        assertEquals(2, memberService.listAllMembers().size());
+        assertEquals(1, memberService.listAllMembers().size());
     }
 
     @Test
-    void deactivateMemberSetsInactive() {
-        Student student = new Student("Alice", "alice@uni.edu", "123");
-        student.setId(1);
+    void deactivateMember_success() {
+        Student student = new Student("A", "a@b.com", "1");
+        assertTrue(student.isActive());
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
         memberService.deactivateMember(1);
@@ -96,9 +84,10 @@ class MemberServiceTest {
     }
 
     @Test
-    void deactivateNonExistentMemberThrows() {
+    void deactivateMember_notFound_throws() {
         when(memberRepo.findById(99)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> memberService.deactivateMember(99));
+        assertThrows(IllegalArgumentException.class,
+                () -> memberService.deactivateMember(99));
     }
 }

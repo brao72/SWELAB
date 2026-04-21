@@ -95,11 +95,10 @@ public class ApiServer {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load application.properties", e);
         }
-        DatabaseConnection.initialize(
-                props.getProperty("db.url"),
-                props.getProperty("db.user"),
-                props.getProperty("db.password")
-        );
+        String url = System.getenv().getOrDefault("DB_URL", props.getProperty("db.url"));
+        String user = System.getenv().getOrDefault("DB_USER", props.getProperty("db.user"));
+        String password = System.getenv().getOrDefault("DB_PASSWORD", props.getProperty("db.password"));
+        DatabaseConnection.initialize(url, user, password);
     }
 
     public record ErrorResponse(String error) {}

@@ -2,7 +2,6 @@ package com.libratrack.service;
 
 import com.libratrack.model.Fine;
 import com.libratrack.repository.FineRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,41 +27,67 @@ class FineServiceTest {
     }
 
     @Test
-    void getUnpaidFinesReturnsResults() {
-        Fine fine = new Fine(1, 1, 20.0);
-        fine.setId(1);
-        when(fineRepo.findUnpaidByMemberId(1)).thenReturn(List.of(fine));
+    void getUnpaidFines_delegatesToRepo() {
+        Fine fine = new Fine(1, 10, 20.0);
+        when(fineRepo.findUnpaidByMemberId(10)).thenReturn(List.of(fine));
 
-        List<Fine> result = fineService.getUnpaidFines(1);
+        List<Fine> result = fineService.getUnpaidFines(10);
+
         assertEquals(1, result.size());
         assertEquals(20.0, result.get(0).getAmount());
     }
 
     @Test
-    void getTotalUnpaidDelegatesToRepo() {
-        when(fineRepo.getTotalUnpaidByMemberId(1)).thenReturn(45.0);
-        assertEquals(45.0, fineService.getTotalUnpaid(1));
+    void getUnpaidFines_empty() {
+        when(fineRepo.findUnpaidByMemberId(10)).thenReturn(List.of());
+
+        assertTrue(fineService.getUnpaidFines(10).isEmpty());
     }
 
     @Test
-    void payFineMarksFineAsPaid() {
-        Fine fine = new Fine(1, 1, 20.0);
-        fine.setId(1);
-        List<Fine> unpaid = List.of(fine);
+    void getTotalUnpaid_delegatesToRepo() {
+        when(fineRepo.getTotalUnpaidByMemberId(10)).thenReturn(45.0);
 
-        fineService.payFine(1, unpaid);
-
-        assertTrue(fine.isPaid());
-        verify(fineRepo).update(fine);
+        assertEquals(45.0, fineService.getTotalUnpaid(10));
     }
 
     @Test
-    void payFineThrowsForNonExistentFine() {
-        Fine fine = new Fine(1, 1, 20.0);
+    void payFine_success() {
+        Fine fine1 = new Fine(1, 10, 20.0);
+        fine1.setId(1);
+        Fine fine2 = new Fine(2, 10, 30.0);
+        fine2.setId(2);
+        List<Fine> unpaid = List.of(fine1, fine2);
+
+        fineService.payFine(2, unpaid);
+
+        assertTrue(fine2.isPaid());
+        verify(fineRepo).update(fine2);
+    }
+
+    @Test
+    void payFine_invalidId_throws() {
+        Fine fine = new Fine(1, 10, 20.0);
         fine.setId(1);
         List<Fine> unpaid = List.of(fine);
 
         assertThrows(IllegalArgumentException.class,
                 () -> fineService.payFine(99, unpaid));
+
+        verify(fineRepo, never()).update(any());
+    }
+
+    @Test
+    void payFine_marksOnlyTargetFine() {
+        Fine fine1 = new Fine(1, 10, 20.0);
+        fine1.setId(1);
+        Fine fine2 = new Fine(2, 10, 30.0);
+        fine2.setId(2);
+        List<Fine> unpaid = List.of(fine1, fine2);
+
+        fineService.payFine(1, unpaid);
+
+        assertTrue(fine1.isPaid());
+        assertFalse(fine2.isPaid());
     }
 }

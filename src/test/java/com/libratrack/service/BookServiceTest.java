@@ -2,7 +2,6 @@ package com.libratrack.service;
 
 import com.libratrack.model.Book;
 import com.libratrack.repository.BookRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,62 +29,67 @@ class BookServiceTest {
     }
 
     @Test
-    void addBookSuccessfully() {
-        when(bookRepo.findByIsbn("978-0132350884")).thenReturn(Optional.empty());
-        when(bookRepo.save(any(Book.class))).thenAnswer(inv -> {
-            Book b = inv.getArgument(0);
-            b.setId(1);
-            return b;
-        });
+    void addBook_success() {
+        when(bookRepo.findByIsbn("978-1234")).thenReturn(Optional.empty());
+        when(bookRepo.save(any(Book.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Book result = bookService.addBook("Clean Code", "Robert Martin", "978-0132350884", "Software", 3);
+        Book book = bookService.addBook("Clean Code", "Robert Martin", "978-1234", "Software", 3);
 
-        assertEquals(1, result.getId());
-        assertEquals("Clean Code", result.getTitle());
+        assertEquals("Clean Code", book.getTitle());
+        assertEquals(3, book.getAvailableCopies());
         verify(bookRepo).save(any(Book.class));
     }
 
     @Test
-    void addBookThrowsForDuplicateIsbn() {
-        Book existing = new Book("Old", "Author", "978-0132350884", "Genre", 1);
-        when(bookRepo.findByIsbn("978-0132350884")).thenReturn(Optional.of(existing));
+    void addBook_duplicateIsbn_throws() {
+        when(bookRepo.findByIsbn("978-1234")).thenReturn(Optional.of(new Book()));
 
         assertThrows(IllegalArgumentException.class,
-                () -> bookService.addBook("New", "Author", "978-0132350884", "Genre", 1));
+                () -> bookService.addBook("Title", "Author", "978-1234", "Genre", 1));
+
         verify(bookRepo, never()).save(any());
     }
 
     @Test
-    void searchBooksReturnsResults() {
-        Book book = new Book("Clean Code", "Robert Martin", "978-0132350884", "Software", 3);
-        when(bookRepo.search("clean")).thenReturn(List.of(book));
+    void searchBooks_delegatesToRepo() {
+        List<Book> expected = List.of(new Book("A", "B", "123", "G", 1));
+        when(bookRepo.search("java")).thenReturn(expected);
 
-        List<Book> results = bookService.searchBooks("clean");
+        List<Book> result = bookService.searchBooks("java");
 
-        assertEquals(1, results.size());
-        assertEquals("Clean Code", results.get(0).getTitle());
+        assertEquals(1, result.size());
+        verify(bookRepo).search("java");
     }
 
     @Test
-    void listAllBooksReturnsAll() {
-        when(bookRepo.findAll()).thenReturn(List.of(
-                new Book("A", "X", "1", "G", 1),
-                new Book("B", "Y", "2", "G", 2)
-        ));
+    void listAllBooks_delegatesToRepo() {
+        when(bookRepo.findAll()).thenReturn(List.of(new Book(), new Book()));
 
-        assertEquals(2, bookService.listAllBooks().size());
+        List<Book> result = bookService.listAllBooks();
+
+        assertEquals(2, result.size());
     }
 
     @Test
-    void findByIsbnDelegatesToRepo() {
-        Book book = new Book("Clean Code", "Robert Martin", "978-0132350884", "Software", 3);
-        when(bookRepo.findByIsbn("978-0132350884")).thenReturn(Optional.of(book));
+    void findByIsbn_found() {
+        Book book = new Book("Test", "Auth", "111", "G", 1);
+        when(bookRepo.findByIsbn("111")).thenReturn(Optional.of(book));
 
-        assertTrue(bookService.findByIsbn("978-0132350884").isPresent());
+        Optional<Book> result = bookService.findByIsbn("111");
+
+        assertTrue(result.isPresent());
+        assertEquals("Test", result.get().getTitle());
     }
 
     @Test
-    void removeBookDelegatesToRepo() {
+    void findByIsbn_notFound() {
+        when(bookRepo.findByIsbn("999")).thenReturn(Optional.empty());
+
+        assertTrue(bookService.findByIsbn("999").isEmpty());
+    }
+
+    @Test
+    void removeBook_delegatesToRepo() {
         bookService.removeBook(1);
         verify(bookRepo).delete(1);
     }

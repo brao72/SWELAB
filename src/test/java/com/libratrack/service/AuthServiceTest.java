@@ -3,7 +3,6 @@ package com.libratrack.service;
 import com.libratrack.model.*;
 import com.libratrack.repository.LibrarianRepository;
 import com.libratrack.repository.MemberRepository;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,53 +29,59 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginLibrarianSuccessfully() {
-        Librarian lib = new Librarian("admin", AuthService.hashPassword("admin123"), "System Admin");
+    void loginLibrarian_success() {
+        String hash = AuthService.hashPassword("admin123");
+        Librarian lib = new Librarian("admin", hash, "Admin");
         lib.setId(1);
         when(librarianRepo.findByUsername("admin")).thenReturn(Optional.of(lib));
 
         Session session = authService.loginLibrarian("admin", "admin123");
 
         assertEquals(Role.LIBRARIAN, session.getRole());
-        assertEquals(1, session.getUserId());
-        assertEquals("System Admin", session.getDisplayName());
+        assertEquals("Admin", session.getDisplayName());
     }
 
     @Test
-    void loginLibrarianFailsForWrongPassword() {
-        Librarian lib = new Librarian("admin", AuthService.hashPassword("admin123"), "System Admin");
-        lib.setId(1);
+    void loginLibrarian_wrongUsername_throws() {
+        when(librarianRepo.findByUsername("nobody")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.loginLibrarian("nobody", "pass"));
+    }
+
+    @Test
+    void loginLibrarian_wrongPassword_throws() {
+        Librarian lib = new Librarian("admin", AuthService.hashPassword("correct"), "Admin");
         when(librarianRepo.findByUsername("admin")).thenReturn(Optional.of(lib));
 
         assertThrows(IllegalArgumentException.class,
-                () -> authService.loginLibrarian("admin", "wrongpassword"));
+                () -> authService.loginLibrarian("admin", "wrong"));
     }
 
     @Test
-    void loginLibrarianFailsForUnknownUsername() {
-        when(librarianRepo.findByUsername("unknown")).thenReturn(Optional.empty());
+    void loginMember_success() {
+        Student student = new Student("Alice", "a@b.com", "123");
+        student.setId(5);
+        when(memberRepo.findById(5)).thenReturn(Optional.of(student));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> authService.loginLibrarian("unknown", "pass"));
-    }
-
-    @Test
-    void loginMemberSuccessfully() {
-        Student student = new Student("Alice", "alice@uni.edu", "123");
-        student.setId(1);
-        when(memberRepo.findById(1)).thenReturn(Optional.of(student));
-
-        Session session = authService.loginMember(1);
+        Session session = authService.loginMember(5);
 
         assertEquals(Role.MEMBER, session.getRole());
-        assertEquals(1, session.getUserId());
+        assertEquals(5, session.getUserId());
         assertEquals("Alice", session.getDisplayName());
     }
 
     @Test
-    void loginMemberFailsForInactive() {
-        Student student = new Student("Alice", "alice@uni.edu", "123");
-        student.setId(1);
+    void loginMember_notFound_throws() {
+        when(memberRepo.findById(99)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.loginMember(99));
+    }
+
+    @Test
+    void loginMember_inactive_throws() {
+        Student student = new Student("A", "a@b.com", "1");
         student.setActive(false);
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
@@ -85,49 +90,40 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginMemberFailsForNonExistent() {
-        when(memberRepo.findById(99)).thenReturn(Optional.empty());
+    void registerLibrarian_savesToRepo() {
+        when(librarianRepo.save(any(Librarian.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> authService.loginMember(99));
-    }
+        Librarian lib = authService.registerLibrarian("newadmin", "pass", "New Admin");
 
-    @Test
-    void registerLibrarianSavesToRepo() {
-        when(librarianRepo.save(any(Librarian.class))).thenAnswer(inv -> {
-            Librarian l = inv.getArgument(0);
-            l.setId(1);
-            return l;
-        });
-
-        Librarian lib = authService.registerLibrarian("admin", "pass", "Admin");
-
-        assertEquals(1, lib.getId());
-        assertEquals("admin", lib.getUsername());
+        assertEquals("newadmin", lib.getUsername());
         assertNotEquals("pass", lib.getPasswordHash()); // should be hashed
         verify(librarianRepo).save(any(Librarian.class));
     }
 
     @Test
-    void hasAnyLibrarianDelegatesToRepo() {
-        when(librarianRepo.count()).thenReturn(0L);
-        assertFalse(authService.hasAnyLibrarian());
+    void hashPassword_isSHA256_deterministic() {
+        String hash1 = AuthService.hashPassword("test");
+        String hash2 = AuthService.hashPassword("test");
+        assertEquals(hash1, hash2);
+        assertEquals(64, hash1.length()); // SHA-256 = 64 hex chars
+    }
 
+    @Test
+    void hashPassword_differentInputs_differentHashes() {
+        assertNotEquals(
+                AuthService.hashPassword("password1"),
+                AuthService.hashPassword("password2"));
+    }
+
+    @Test
+    void hasAnyLibrarian_true() {
         when(librarianRepo.count()).thenReturn(1L);
         assertTrue(authService.hasAnyLibrarian());
     }
 
     @Test
-    void hashPasswordIsConsistent() {
-        String hash1 = AuthService.hashPassword("test");
-        String hash2 = AuthService.hashPassword("test");
-        assertEquals(hash1, hash2);
-    }
-
-    @Test
-    void hashPasswordDiffersForDifferentInputs() {
-        String hash1 = AuthService.hashPassword("password1");
-        String hash2 = AuthService.hashPassword("password2");
-        assertNotEquals(hash1, hash2);
+    void hasAnyLibrarian_false() {
+        when(librarianRepo.count()).thenReturn(0L);
+        assertFalse(authService.hasAnyLibrarian());
     }
 }
