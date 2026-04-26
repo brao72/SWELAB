@@ -62,7 +62,7 @@ public class BorrowController {
         int memberId = Integer.parseInt(ctx.pathParam("memberId"));
         List<Reservation> reservations = borrowService.getMemberReservations(memberId);
         List<NotificationResponse> notifications = reservations.stream()
-                .filter(Reservation::isNotified)
+                .filter(r -> r.isNotified() && !r.isFulfilled())
                 .map(r -> {
                     String bookTitle = bookService.findById(r.getBookId())
                             .map(Book::getTitle)
