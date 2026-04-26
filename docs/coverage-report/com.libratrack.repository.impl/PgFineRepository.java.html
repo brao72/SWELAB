@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PgFineRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.repository.impl</a> &gt; <span class="el_source">PgFineRepository.java</span></div><h1>PgFineRepository.java</h1><pre class="source lang-java linenums">package com.libratrack.repository.impl;
+
+import com.libratrack.db.DatabaseConnection;
+import com.libratrack.model.Fine;
+import com.libratrack.repository.FineRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+
+import java.util.List;
+
+<span class="nc" id="L11">public class PgFineRepository implements FineRepository {</span>
+
+    @Override
+    public Fine save(Fine fine) {
+<span class="nc" id="L15">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L16">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L18">            tx.begin();</span>
+<span class="nc" id="L19">            em.persist(fine);</span>
+<span class="nc" id="L20">            tx.commit();</span>
+<span class="nc" id="L21">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L23">            throw new RuntimeException(&quot;Error saving fine: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L25">            em.close();</span>
+        }
+<span class="nc" id="L27">        return fine;</span>
+    }
+
+    @Override
+    public List&lt;Fine&gt; findUnpaidByMemberId(int memberId) {
+<span class="nc" id="L32">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L34">            return em.createQuery(</span>
+                    &quot;SELECT f FROM Fine f WHERE f.memberId = :memberId AND f.isPaid = false ORDER BY f.createdAt&quot;, Fine.class)
+<span class="nc" id="L36">                    .setParameter(&quot;memberId&quot;, memberId)</span>
+<span class="nc" id="L37">                    .getResultList();</span>
+        } finally {
+<span class="nc" id="L39">            em.close();</span>
+        }
+    }
+
+    @Override
+    public void update(Fine fine) {
+<span class="nc" id="L45">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L46">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L48">            tx.begin();</span>
+<span class="nc" id="L49">            em.merge(fine);</span>
+<span class="nc" id="L50">            tx.commit();</span>
+<span class="nc" id="L51">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L53">            throw new RuntimeException(&quot;Error updating fine: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L55">            em.close();</span>
+        }
+<span class="nc" id="L57">    }</span>
+
+    @Override
+    public double getTotalUnpaidByMemberId(int memberId) {
+<span class="nc" id="L61">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L63">            Double total = em.createQuery(</span>
+                    &quot;SELECT COALESCE(SUM(f.amount), 0.0) FROM Fine f WHERE f.memberId = :memberId AND f.isPaid = false&quot;, Double.class)
+<span class="nc" id="L65">                    .setParameter(&quot;memberId&quot;, memberId)</span>
+<span class="nc" id="L66">                    .getSingleResult();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            return total != null ? total : 0.0;</span>
+        } finally {
+<span class="nc" id="L69">            em.close();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

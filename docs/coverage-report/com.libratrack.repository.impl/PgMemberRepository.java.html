@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PgMemberRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.repository.impl</a> &gt; <span class="el_source">PgMemberRepository.java</span></div><h1>PgMemberRepository.java</h1><pre class="source lang-java linenums">package com.libratrack.repository.impl;
+
+import com.libratrack.db.DatabaseConnection;
+import com.libratrack.model.Member;
+import com.libratrack.repository.MemberRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+
+import java.util.List;
+import java.util.Optional;
+
+<span class="nc" id="L12">public class PgMemberRepository implements MemberRepository {</span>
+
+    @Override
+    public Member save(Member member) {
+<span class="nc" id="L16">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L17">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L19">            tx.begin();</span>
+<span class="nc" id="L20">            em.persist(member);</span>
+<span class="nc" id="L21">            tx.commit();</span>
+<span class="nc" id="L22">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L24">            throw new RuntimeException(&quot;Error saving member: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L26">            em.close();</span>
+        }
+<span class="nc" id="L28">        return member;</span>
+    }
+
+    @Override
+    public Optional&lt;Member&gt; findById(int id) {
+<span class="nc" id="L33">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L35">            Member member = em.find(Member.class, id);</span>
+<span class="nc" id="L36">            return Optional.ofNullable(member);</span>
+        } finally {
+<span class="nc" id="L38">            em.close();</span>
+        }
+    }
+
+    @Override
+    public List&lt;Member&gt; findAll() {
+<span class="nc" id="L44">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L46">            return em.createQuery(&quot;SELECT m FROM Member m ORDER BY m.id&quot;, Member.class)</span>
+<span class="nc" id="L47">                    .getResultList();</span>
+        } finally {
+<span class="nc" id="L49">            em.close();</span>
+        }
+    }
+
+    @Override
+    public void update(Member member) {
+<span class="nc" id="L55">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L56">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L58">            tx.begin();</span>
+<span class="nc" id="L59">            em.merge(member);</span>
+<span class="nc" id="L60">            tx.commit();</span>
+<span class="nc" id="L61">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L63">            throw new RuntimeException(&quot;Error updating member: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L65">            em.close();</span>
+        }
+<span class="nc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

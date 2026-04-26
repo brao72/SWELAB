@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BorrowController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.api</a> &gt; <span class="el_source">BorrowController.java</span></div><h1>BorrowController.java</h1><pre class="source lang-java linenums">package com.libratrack.api;
+
+import com.libratrack.model.Book;
+import com.libratrack.model.BorrowRecord;
+import com.libratrack.model.Reservation;
+import com.libratrack.service.BookService;
+import com.libratrack.service.BorrowService;
+import io.javalin.Javalin;
+import io.javalin.http.Context;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public class BorrowController {
+    private final BorrowService borrowService;
+    private final BookService bookService;
+
+<span class="nc" id="L18">    public BorrowController(BorrowService borrowService, BookService bookService) {</span>
+<span class="nc" id="L19">        this.borrowService = borrowService;</span>
+<span class="nc" id="L20">        this.bookService = bookService;</span>
+<span class="nc" id="L21">    }</span>
+
+    public void registerRoutes(Javalin app) {
+<span class="nc" id="L24">        app.post(&quot;/api/borrow/issue&quot;, this::issueBook);</span>
+<span class="nc" id="L25">        app.post(&quot;/api/borrow/return&quot;, this::returnBook);</span>
+<span class="nc" id="L26">        app.post(&quot;/api/borrow/reserve&quot;, this::reserveBook);</span>
+<span class="nc" id="L27">        app.get(&quot;/api/borrow/history/{memberId}&quot;, this::getMemberHistory);</span>
+<span class="nc" id="L28">        app.get(&quot;/api/borrow/notifications/{memberId}&quot;, this::getNotifications);</span>
+<span class="nc" id="L29">        app.post(&quot;/api/borrow/notifications/{id}/dismiss&quot;, this::dismissNotification);</span>
+<span class="nc" id="L30">    }</span>
+
+    private void issueBook(Context ctx) {
+<span class="nc" id="L33">        BorrowRequest req = ctx.bodyAsClass(BorrowRequest.class);</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        LocalDate dueDate = req.dueDate() != null ? LocalDate.parse(req.dueDate()) : null;</span>
+<span class="nc" id="L35">        BorrowRecord record = borrowService.issueBook(req.memberId(), req.isbn(), dueDate);</span>
+<span class="nc" id="L36">        ctx.status(201).json(record);</span>
+<span class="nc" id="L37">    }</span>
+
+    private void returnBook(Context ctx) {
+<span class="nc" id="L40">        BorrowRequest req = ctx.bodyAsClass(BorrowRequest.class);</span>
+<span class="nc" id="L41">        BorrowService.ReturnResult result = borrowService.returnBook(req.memberId(), req.isbn());</span>
+<span class="nc" id="L42">        ctx.json(new ReturnResponse(</span>
+<span class="nc" id="L43">                result.record().getId(),</span>
+<span class="nc" id="L44">                result.fineAmount(),</span>
+<span class="nc" id="L45">                result.daysOverdue()</span>
+        ));
+<span class="nc" id="L47">    }</span>
+
+    private void reserveBook(Context ctx) {
+<span class="nc" id="L50">        BorrowRequest req = ctx.bodyAsClass(BorrowRequest.class);</span>
+<span class="nc" id="L51">        Reservation reservation = borrowService.reserveBook(req.memberId(), req.isbn());</span>
+<span class="nc" id="L52">        ctx.status(201).json(reservation);</span>
+<span class="nc" id="L53">    }</span>
+
+    private void getMemberHistory(Context ctx) {
+<span class="nc" id="L56">        int memberId = Integer.parseInt(ctx.pathParam(&quot;memberId&quot;));</span>
+<span class="nc" id="L57">        List&lt;BorrowRecord&gt; history = borrowService.getMemberHistory(memberId);</span>
+<span class="nc" id="L58">        ctx.json(history);</span>
+<span class="nc" id="L59">    }</span>
+
+    private void getNotifications(Context ctx) {
+<span class="nc" id="L62">        int memberId = Integer.parseInt(ctx.pathParam(&quot;memberId&quot;));</span>
+<span class="nc" id="L63">        List&lt;Reservation&gt; reservations = borrowService.getMemberReservations(memberId);</span>
+<span class="nc" id="L64">        List&lt;NotificationResponse&gt; notifications = reservations.stream()</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">                .filter(r -&gt; r.isNotified() &amp;&amp; !r.isFulfilled())</span>
+<span class="nc" id="L66">                .map(r -&gt; {</span>
+<span class="nc" id="L67">                    String bookTitle = bookService.findById(r.getBookId())</span>
+<span class="nc" id="L68">                            .map(Book::getTitle)</span>
+<span class="nc" id="L69">                            .orElse(&quot;Unknown Book&quot;);</span>
+<span class="nc" id="L70">                    return new NotificationResponse(r.getId(), bookTitle, r.getReservedAt().toString());</span>
+                })
+<span class="nc" id="L72">                .toList();</span>
+<span class="nc" id="L73">        ctx.json(notifications);</span>
+<span class="nc" id="L74">    }</span>
+
+    private void dismissNotification(Context ctx) {
+<span class="nc" id="L77">        int reservationId = Integer.parseInt(ctx.pathParam(&quot;id&quot;));</span>
+<span class="nc" id="L78">        borrowService.fulfillReservation(reservationId);</span>
+<span class="nc" id="L79">        ctx.status(204);</span>
+<span class="nc" id="L80">    }</span>
+
+<span class="nc" id="L82">    public record BorrowRequest(int memberId, String isbn, String dueDate) {}</span>
+<span class="nc" id="L83">    public record NotificationResponse(int reservationId, String bookTitle, String reservedAt) {}</span>
+<span class="nc" id="L84">    public record ReturnResponse(int recordId, double fineAmount, long daysOverdue) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

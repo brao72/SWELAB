@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PgBorrowRecordRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.repository.impl</a> &gt; <span class="el_source">PgBorrowRecordRepository.java</span></div><h1>PgBorrowRecordRepository.java</h1><pre class="source lang-java linenums">package com.libratrack.repository.impl;
+
+import com.libratrack.db.DatabaseConnection;
+import com.libratrack.model.BorrowRecord;
+import com.libratrack.repository.BorrowRecordRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+
+import java.util.List;
+import java.util.Optional;
+
+<span class="nc" id="L12">public class PgBorrowRecordRepository implements BorrowRecordRepository {</span>
+
+    @Override
+    public BorrowRecord save(BorrowRecord record) {
+<span class="nc" id="L16">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L17">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L19">            tx.begin();</span>
+<span class="nc" id="L20">            em.persist(record);</span>
+<span class="nc" id="L21">            tx.commit();</span>
+<span class="nc" id="L22">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L24">            throw new RuntimeException(&quot;Error saving borrow record: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L26">            em.close();</span>
+        }
+<span class="nc" id="L28">        return record;</span>
+    }
+
+    @Override
+    public Optional&lt;BorrowRecord&gt; findActiveByBookAndMember(int bookId, int memberId) {
+<span class="nc" id="L33">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L35">            List&lt;BorrowRecord&gt; results = em.createQuery(</span>
+                    &quot;SELECT br FROM BorrowRecord br WHERE br.bookId = :bookId AND br.memberId = :memberId AND br.isReturned = false&quot;, BorrowRecord.class)
+<span class="nc" id="L37">                    .setParameter(&quot;bookId&quot;, bookId)</span>
+<span class="nc" id="L38">                    .setParameter(&quot;memberId&quot;, memberId)</span>
+<span class="nc" id="L39">                    .getResultList();</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));</span>
+        } finally {
+<span class="nc" id="L42">            em.close();</span>
+        }
+    }
+
+    @Override
+    public List&lt;BorrowRecord&gt; findActiveByMemberId(int memberId) {
+<span class="nc" id="L48">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L50">            return em.createQuery(</span>
+                    &quot;SELECT br FROM BorrowRecord br WHERE br.memberId = :memberId AND br.isReturned = false&quot;, BorrowRecord.class)
+<span class="nc" id="L52">                    .setParameter(&quot;memberId&quot;, memberId)</span>
+<span class="nc" id="L53">                    .getResultList();</span>
+        } finally {
+<span class="nc" id="L55">            em.close();</span>
+        }
+    }
+
+    @Override
+    public List&lt;BorrowRecord&gt; findByMemberId(int memberId) {
+<span class="nc" id="L61">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+        try {
+<span class="nc" id="L63">            return em.createQuery(</span>
+                    &quot;SELECT br FROM BorrowRecord br WHERE br.memberId = :memberId ORDER BY br.issueDate DESC&quot;, BorrowRecord.class)
+<span class="nc" id="L65">                    .setParameter(&quot;memberId&quot;, memberId)</span>
+<span class="nc" id="L66">                    .getResultList();</span>
+        } finally {
+<span class="nc" id="L68">            em.close();</span>
+        }
+    }
+
+    @Override
+    public void update(BorrowRecord record) {
+<span class="nc" id="L74">        EntityManager em = DatabaseConnection.getInstance().getEntityManager();</span>
+<span class="nc" id="L75">        EntityTransaction tx = em.getTransaction();</span>
+        try {
+<span class="nc" id="L77">            tx.begin();</span>
+<span class="nc" id="L78">            em.merge(record);</span>
+<span class="nc" id="L79">            tx.commit();</span>
+<span class="nc" id="L80">        } catch (RuntimeException e) {</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (tx.isActive()) tx.rollback();</span>
+<span class="nc" id="L82">            throw new RuntimeException(&quot;Error updating borrow record: &quot; + e.getMessage(), e);</span>
+        } finally {
+<span class="nc" id="L84">            em.close();</span>
+        }
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

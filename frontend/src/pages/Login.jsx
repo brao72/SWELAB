@@ -33,7 +33,7 @@ export default function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-card">
         <h1>LibraTrack</h1>
-        <p className="login-subtitle">College Library Management System</p>
+        <p className="login-subtitle">Uni Library Management System</p>
 
         <div className="tab-group">
           <button

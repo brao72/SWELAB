@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewFinesCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.command</a> &gt; <span class="el_source">ViewFinesCommand.java</span></div><h1>ViewFinesCommand.java</h1><pre class="source lang-java linenums">package com.libratrack.command;
+
+import com.libratrack.model.Fine;
+import com.libratrack.model.Role;
+import com.libratrack.model.Session;
+import com.libratrack.service.FineService;
+
+import java.util.List;
+import java.util.Scanner;
+
+public class ViewFinesCommand implements Command {
+    private final FineService fineService;
+    private final Scanner scanner;
+    private final Session session;
+
+    public ViewFinesCommand(FineService fineService, Scanner scanner) {
+<span class="nc" id="L17">        this(fineService, scanner, null);</span>
+<span class="nc" id="L18">    }</span>
+
+<span class="nc" id="L20">    public ViewFinesCommand(FineService fineService, Scanner scanner, Session session) {</span>
+<span class="nc" id="L21">        this.fineService = fineService;</span>
+<span class="nc" id="L22">        this.scanner = scanner;</span>
+<span class="nc" id="L23">        this.session = session;</span>
+<span class="nc" id="L24">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L28">        System.out.println(&quot;\n--- View Fines ---&quot;);</span>
+        int memberId;
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        if (session != null &amp;&amp; session.getRole() == Role.MEMBER) {</span>
+<span class="nc" id="L31">            memberId = session.getUserId();</span>
+        } else {
+<span class="nc" id="L33">            System.out.print(&quot;Member ID: &quot;);</span>
+<span class="nc" id="L34">            memberId = Integer.parseInt(scanner.nextLine().trim());</span>
+        }
+
+<span class="nc" id="L37">        List&lt;Fine&gt; fines = fineService.getUnpaidFines(memberId);</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (fines.isEmpty()) {</span>
+<span class="nc" id="L39">            System.out.println(&quot;No unpaid fines.&quot;);</span>
+        } else {
+<span class="nc" id="L41">            double total = fineService.getTotalUnpaid(memberId);</span>
+<span class="nc" id="L42">            fines.forEach(System.out::println);</span>
+<span class="nc" id="L43">            System.out.printf(&quot;Total unpaid: ₹%.2f%n&quot;, total);</span>
+        }
+<span class="nc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

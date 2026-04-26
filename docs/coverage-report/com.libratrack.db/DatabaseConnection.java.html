@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.db</a> &gt; <span class="el_source">DatabaseConnection.java</span></div><h1>DatabaseConnection.java</h1><pre class="source lang-java linenums">package com.libratrack.db;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class DatabaseConnection {
+    private static DatabaseConnection instance;
+    private final EntityManagerFactory emf;
+
+<span class="nc" id="L14">    private DatabaseConnection(String url, String user, String password) {</span>
+<span class="nc" id="L15">        Map&lt;String, String&gt; props = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L16">        props.put(&quot;jakarta.persistence.jdbc.url&quot;, url);</span>
+<span class="nc" id="L17">        props.put(&quot;jakarta.persistence.jdbc.user&quot;, user);</span>
+<span class="nc" id="L18">        props.put(&quot;jakarta.persistence.jdbc.password&quot;, password);</span>
+<span class="nc" id="L19">        this.emf = Persistence.createEntityManagerFactory(&quot;libratrack&quot;, props);</span>
+<span class="nc" id="L20">    }</span>
+
+    public static synchronized DatabaseConnection getInstance() {
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        if (instance == null) {</span>
+<span class="nc" id="L24">            throw new IllegalStateException(&quot;DatabaseConnection not initialized. Call initialize() first.&quot;);</span>
+        }
+<span class="nc" id="L26">        return instance;</span>
+    }
+
+    public static synchronized void initialize(String url, String user, String password) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (instance == null) {</span>
+<span class="nc" id="L31">            instance = new DatabaseConnection(url, user, password);</span>
+        }
+<span class="nc" id="L33">    }</span>
+
+    public EntityManager getEntityManager() {
+<span class="nc" id="L36">        return emf.createEntityManager();</span>
+    }
+
+    public void close() {
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        if (emf != null &amp;&amp; emf.isOpen()) {</span>
+<span class="nc" id="L41">            emf.close();</span>
+        }
+<span class="nc" id="L43">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

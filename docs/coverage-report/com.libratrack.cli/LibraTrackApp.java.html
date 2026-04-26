@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LibraTrackApp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.cli</a> &gt; <span class="el_source">LibraTrackApp.java</span></div><h1>LibraTrackApp.java</h1><pre class="source lang-java linenums">package com.libratrack.cli;
+
+import com.libratrack.command.*;
+import com.libratrack.db.DatabaseConnection;
+import com.libratrack.model.Role;
+import com.libratrack.model.Session;
+import com.libratrack.observer.ReservationNotifier;
+import com.libratrack.repository.*;
+import com.libratrack.repository.impl.*;
+import com.libratrack.service.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Scanner;
+
+<span class="nc" id="L19">public class LibraTrackApp {</span>
+<span class="nc" id="L20">    private final Map&lt;String, Command&gt; commands = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L21">    private final Scanner scanner = new Scanner(System.in);</span>
+
+    private BookService bookService;
+    private MemberService memberService;
+    private BorrowService borrowService;
+    private FineService fineService;
+    private AuthService authService;
+
+    public static void main(String[] args) {
+<span class="nc" id="L30">        LibraTrackApp app = new LibraTrackApp();</span>
+<span class="nc" id="L31">        app.run();</span>
+<span class="nc" id="L32">    }</span>
+
+    public void run() {
+<span class="nc" id="L35">        System.out.println(&quot;========================================&quot;);</span>
+<span class="nc" id="L36">        System.out.println(&quot;   LibraTrack - Library Management System&quot;);</span>
+<span class="nc" id="L37">        System.out.println(&quot;========================================&quot;);</span>
+
+        try {
+<span class="nc" id="L40">            initDatabase();</span>
+<span class="nc" id="L41">            initServices();</span>
+<span class="nc" id="L42">            seedDefaultLibrarian();</span>
+<span class="nc" id="L43">            loginLoop();</span>
+<span class="nc" id="L44">        } catch (Exception e) {</span>
+<span class="nc" id="L45">            System.err.println(&quot;Fatal error: &quot; + e.getMessage());</span>
+<span class="nc" id="L46">            e.printStackTrace();</span>
+        } finally {
+            try {
+<span class="nc" id="L49">                DatabaseConnection.getInstance().close();</span>
+<span class="nc" id="L50">            } catch (IllegalStateException ignored) {</span>
+                // Database was never initialized, nothing to close
+<span class="nc" id="L52">            }</span>
+        }
+<span class="nc" id="L54">    }</span>
+
+    private void initDatabase() throws IOException {
+<span class="nc" id="L57">        Properties props = new Properties();</span>
+<span class="nc" id="L58">        try (InputStream is = getClass().getClassLoader().getResourceAsStream(&quot;application.properties&quot;)) {</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            if (is == null) {</span>
+<span class="nc" id="L60">                throw new IOException(&quot;application.properties not found in classpath&quot;);</span>
+            }
+<span class="nc" id="L62">            props.load(is);</span>
+        }
+<span class="nc" id="L64">        DatabaseConnection.initialize(</span>
+<span class="nc" id="L65">                props.getProperty(&quot;db.url&quot;),</span>
+<span class="nc" id="L66">                props.getProperty(&quot;db.user&quot;),</span>
+<span class="nc" id="L67">                props.getProperty(&quot;db.password&quot;)</span>
+        );
+<span class="nc" id="L69">        System.out.println(&quot;Connected to database.&quot;);</span>
+<span class="nc" id="L70">    }</span>
+
+    private void initServices() {
+<span class="nc" id="L73">        BookRepository bookRepo = new PgBookRepository();</span>
+<span class="nc" id="L74">        MemberRepository memberRepo = new PgMemberRepository();</span>
+<span class="nc" id="L75">        BorrowRecordRepository borrowRepo = new PgBorrowRecordRepository();</span>
+<span class="nc" id="L76">        ReservationRepository reservationRepo = new PgReservationRepository();</span>
+<span class="nc" id="L77">        FineRepository fineRepo = new PgFineRepository();</span>
+<span class="nc" id="L78">        LibrarianRepository librarianRepo = new PgLibrarianRepository();</span>
+
+<span class="nc" id="L80">        ReservationNotifier notifier = new ReservationNotifier(reservationRepo);</span>
+
+<span class="nc" id="L82">        bookService = new BookService(bookRepo);</span>
+<span class="nc" id="L83">        memberService = new MemberService(memberRepo);</span>
+<span class="nc" id="L84">        borrowService = new BorrowService(bookRepo, memberRepo, borrowRepo, reservationRepo, fineRepo, notifier);</span>
+<span class="nc" id="L85">        fineService = new FineService(fineRepo);</span>
+<span class="nc" id="L86">        authService = new AuthService(librarianRepo, memberRepo);</span>
+<span class="nc" id="L87">    }</span>
+
+    private void seedDefaultLibrarian() {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (!authService.hasAnyLibrarian()) {</span>
+<span class="nc" id="L91">            authService.registerLibrarian(&quot;admin&quot;, &quot;admin123&quot;, &quot;System Admin&quot;);</span>
+<span class="nc" id="L92">            System.out.println(&quot;Default librarian created — username: admin, password: admin123&quot;);</span>
+        }
+<span class="nc" id="L94">    }</span>
+
+    private void loginLoop() {
+        while (true) {
+<span class="nc" id="L98">            System.out.println(&quot;\n--- Login ---&quot;);</span>
+<span class="nc" id="L99">            System.out.println(&quot; 1. Login as Librarian&quot;);</span>
+<span class="nc" id="L100">            System.out.println(&quot; 2. Login as Member&quot;);</span>
+<span class="nc" id="L101">            System.out.println(&quot; 0. Exit&quot;);</span>
+<span class="nc" id="L102">            System.out.print(&quot;\nChoose an option: &quot;);</span>
+<span class="nc" id="L103">            String choice = scanner.nextLine().trim();</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (choice.equals(&quot;0&quot;)) {</span>
+<span class="nc" id="L106">                System.out.println(&quot;Goodbye!&quot;);</span>
+<span class="nc" id="L107">                return;</span>
+            }
+
+<span class="nc" id="L110">            Session session = null;</span>
+            try {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                if (choice.equals(&quot;1&quot;)) {</span>
+<span class="nc" id="L113">                    System.out.print(&quot;Username: &quot;);</span>
+<span class="nc" id="L114">                    String username = scanner.nextLine().trim();</span>
+<span class="nc" id="L115">                    System.out.print(&quot;Password: &quot;);</span>
+<span class="nc" id="L116">                    String password = scanner.nextLine().trim();</span>
+<span class="nc" id="L117">                    session = authService.loginLibrarian(username, password);</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                } else if (choice.equals(&quot;2&quot;)) {</span>
+<span class="nc" id="L119">                    System.out.print(&quot;Member ID: &quot;);</span>
+<span class="nc" id="L120">                    int memberId = Integer.parseInt(scanner.nextLine().trim());</span>
+<span class="nc" id="L121">                    System.out.print(&quot;Password: &quot;);</span>
+<span class="nc" id="L122">                    String memberPass = scanner.nextLine().trim();</span>
+<span class="nc" id="L123">                    session = authService.loginMember(memberId, memberPass);</span>
+<span class="nc" id="L124">                } else {</span>
+<span class="nc" id="L125">                    System.out.println(&quot;Invalid option.&quot;);</span>
+<span class="nc" id="L126">                    continue;</span>
+                }
+<span class="nc" id="L128">            } catch (Exception e) {</span>
+<span class="nc" id="L129">                System.out.println(&quot;Login failed: &quot; + e.getMessage());</span>
+<span class="nc" id="L130">                continue;</span>
+<span class="nc" id="L131">            }</span>
+
+<span class="nc" id="L133">            System.out.printf(&quot;Welcome, %s!%n&quot;, session.getDisplayName());</span>
+<span class="nc" id="L134">            initCommands(session);</span>
+<span class="nc" id="L135">            mainLoop(session);</span>
+<span class="nc" id="L136">            commands.clear();</span>
+<span class="nc" id="L137">        }</span>
+    }
+
+    private void initCommands(Session session) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (session.getRole() == Role.LIBRARIAN) {</span>
+<span class="nc" id="L142">            commands.put(&quot;1&quot;, new AddBookCommand(bookService, scanner));</span>
+<span class="nc" id="L143">            commands.put(&quot;2&quot;, new SearchBookCommand(bookService, scanner));</span>
+<span class="nc" id="L144">            commands.put(&quot;3&quot;, new ListBooksCommand(bookService));</span>
+<span class="nc" id="L145">            commands.put(&quot;4&quot;, new RegisterMemberCommand(memberService, scanner));</span>
+<span class="nc" id="L146">            commands.put(&quot;5&quot;, new ListMembersCommand(memberService));</span>
+<span class="nc" id="L147">            commands.put(&quot;6&quot;, new IssueBookCommand(borrowService, scanner));</span>
+<span class="nc" id="L148">            commands.put(&quot;7&quot;, new ReturnBookCommand(borrowService, scanner));</span>
+<span class="nc" id="L149">            commands.put(&quot;8&quot;, new ReserveBookCommand(borrowService, scanner));</span>
+<span class="nc" id="L150">            commands.put(&quot;9&quot;, new MemberHistoryCommand(borrowService, scanner));</span>
+<span class="nc" id="L151">            commands.put(&quot;10&quot;, new ViewFinesCommand(fineService, scanner));</span>
+<span class="nc" id="L152">            commands.put(&quot;11&quot;, new PayFineCommand(fineService, scanner));</span>
+        } else {
+<span class="nc" id="L154">            commands.put(&quot;1&quot;, new SearchBookCommand(bookService, scanner));</span>
+<span class="nc" id="L155">            commands.put(&quot;2&quot;, new ListBooksCommand(bookService));</span>
+<span class="nc" id="L156">            commands.put(&quot;3&quot;, new MemberHistoryCommand(borrowService, scanner, session));</span>
+<span class="nc" id="L157">            commands.put(&quot;4&quot;, new ViewFinesCommand(fineService, scanner, session));</span>
+<span class="nc" id="L158">            commands.put(&quot;5&quot;, new ReserveBookCommand(borrowService, scanner, session));</span>
+<span class="nc" id="L159">            commands.put(&quot;6&quot;, new PayFineCommand(fineService, scanner, session));</span>
+        }
+<span class="nc" id="L161">    }</span>
+
+    private void mainLoop(Session session) {
+        while (true) {
+<span class="nc" id="L165">            printMenu(session);</span>
+<span class="nc" id="L166">            System.out.print(&quot;\nChoose an option: &quot;);</span>
+<span class="nc" id="L167">            String choice = scanner.nextLine().trim();</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (choice.equals(&quot;0&quot;)) {</span>
+<span class="nc" id="L170">                System.out.println(&quot;Logged out.&quot;);</span>
+<span class="nc" id="L171">                return;</span>
+            }
+
+<span class="nc" id="L174">            Command command = commands.get(choice);</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            if (command != null) {</span>
+                try {
+<span class="nc" id="L177">                    command.execute();</span>
+<span class="nc" id="L178">                } catch (Exception e) {</span>
+<span class="nc" id="L179">                    System.out.println(&quot;Error: &quot; + e.getMessage());</span>
+<span class="nc" id="L180">                }</span>
+            } else {
+<span class="nc" id="L182">                System.out.println(&quot;Invalid option. Try again.&quot;);</span>
+            }
+<span class="nc" id="L184">        }</span>
+    }
+
+    private void printMenu(Session session) {
+<span class="nc" id="L188">        System.out.printf(&quot;\n--- %s Menu [%s] ---%n&quot;,</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                session.getRole() == Role.LIBRARIAN ? &quot;Librarian&quot; : &quot;Member&quot;,</span>
+<span class="nc" id="L190">                session.getDisplayName());</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (session.getRole() == Role.LIBRARIAN) {</span>
+<span class="nc" id="L193">            System.out.println(&quot; 1. Add Book&quot;);</span>
+<span class="nc" id="L194">            System.out.println(&quot; 2. Search Books&quot;);</span>
+<span class="nc" id="L195">            System.out.println(&quot; 3. List All Books&quot;);</span>
+<span class="nc" id="L196">            System.out.println(&quot; 4. Register Member&quot;);</span>
+<span class="nc" id="L197">            System.out.println(&quot; 5. List All Members&quot;);</span>
+<span class="nc" id="L198">            System.out.println(&quot; 6. Issue Book&quot;);</span>
+<span class="nc" id="L199">            System.out.println(&quot; 7. Return Book&quot;);</span>
+<span class="nc" id="L200">            System.out.println(&quot; 8. Reserve Book&quot;);</span>
+<span class="nc" id="L201">            System.out.println(&quot; 9. Member History&quot;);</span>
+<span class="nc" id="L202">            System.out.println(&quot;10. View Fines&quot;);</span>
+<span class="nc" id="L203">            System.out.println(&quot;11. Pay Fine&quot;);</span>
+        } else {
+<span class="nc" id="L205">            System.out.println(&quot; 1. Search Books&quot;);</span>
+<span class="nc" id="L206">            System.out.println(&quot; 2. List All Books&quot;);</span>
+<span class="nc" id="L207">            System.out.println(&quot; 3. My Borrowing History&quot;);</span>
+<span class="nc" id="L208">            System.out.println(&quot; 4. My Fines&quot;);</span>
+<span class="nc" id="L209">            System.out.println(&quot; 5. Reserve Book&quot;);</span>
+<span class="nc" id="L210">            System.out.println(&quot; 6. Pay Fine&quot;);</span>
+        }
+<span class="nc" id="L212">        System.out.println(&quot; 0. Logout&quot;);</span>
+<span class="nc" id="L213">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

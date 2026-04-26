@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BorrowService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LibraTrack</a> &gt; <a href="index.source.html" class="el_package">com.libratrack.service</a> &gt; <span class="el_source">BorrowService.java</span></div><h1>BorrowService.java</h1><pre class="source lang-java linenums">package com.libratrack.service;
+
+import com.libratrack.model.*;
+import com.libratrack.observer.ReservationNotifier;
+import com.libratrack.repository.*;
+import com.libratrack.strategy.FineCalculator;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+public class BorrowService {
+    private static final double MAX_UNPAID_FINE = 50.0;
+
+    private final BookRepository bookRepo;
+    private final MemberRepository memberRepo;
+    private final BorrowRecordRepository borrowRepo;
+    private final ReservationRepository reservationRepo;
+    private final FineRepository fineRepo;
+    private final ReservationNotifier notifier;
+
+    public BorrowService(BookRepository bookRepo, MemberRepository memberRepo,
+                         BorrowRecordRepository borrowRepo, ReservationRepository reservationRepo,
+<span class="fc" id="L24">                         FineRepository fineRepo, ReservationNotifier notifier) {</span>
+<span class="fc" id="L25">        this.bookRepo = bookRepo;</span>
+<span class="fc" id="L26">        this.memberRepo = memberRepo;</span>
+<span class="fc" id="L27">        this.borrowRepo = borrowRepo;</span>
+<span class="fc" id="L28">        this.reservationRepo = reservationRepo;</span>
+<span class="fc" id="L29">        this.fineRepo = fineRepo;</span>
+<span class="fc" id="L30">        this.notifier = notifier;</span>
+<span class="fc" id="L31">    }</span>
+
+    public BorrowRecord issueBook(int memberId, String isbn) {
+<span class="fc" id="L34">        return issueBook(memberId, isbn, null);</span>
+    }
+
+    public BorrowRecord issueBook(int memberId, String isbn, LocalDate customDueDate) {
+<span class="fc" id="L38">        Member member = memberRepo.findById(memberId)</span>
+<span class="fc" id="L39">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Member not found: &quot; + memberId));</span>
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!member.isActive()) {</span>
+<span class="fc" id="L42">            throw new IllegalStateException(&quot;Member account is inactive.&quot;);</span>
+        }
+
+<span class="fc" id="L45">        double unpaidFines = fineRepo.getTotalUnpaidByMemberId(memberId);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (unpaidFines &gt; MAX_UNPAID_FINE) {</span>
+<span class="fc" id="L47">            throw new IllegalStateException(</span>
+<span class="fc" id="L48">                    String.format(&quot;Member has ₹%.2f in unpaid fines (max allowed: ₹%.2f). Please clear fines first.&quot;, unpaidFines, MAX_UNPAID_FINE));</span>
+        }
+
+<span class="fc" id="L51">        Book book = bookRepo.findByIsbn(isbn)</span>
+<span class="pc" id="L52">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Book not found with ISBN: &quot; + isbn));</span>
+
+<span class="fc" id="L54">        List&lt;BorrowRecord&gt; activeLoans = borrowRepo.findActiveByMemberId(memberId);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (activeLoans.size() &gt;= member.getBorrowLimit()) {</span>
+<span class="fc" id="L56">            throw new IllegalStateException(</span>
+<span class="fc" id="L57">                    String.format(&quot;Borrowing limit reached (%d/%d). Return a book first.&quot;, activeLoans.size(), member.getBorrowLimit()));</span>
+        }
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (book.getAvailableCopies() &lt;= 0) {</span>
+<span class="fc" id="L61">            throw new IllegalStateException(&quot;No copies available. Consider reserving the book.&quot;);</span>
+        }
+
+<span class="fc" id="L64">        LocalDate issueDate = LocalDate.now();</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        LocalDate dueDate = customDueDate != null ? customDueDate : issueDate.plusDays(member.getLoanPeriodDays());</span>
+<span class="fc" id="L66">        BorrowRecord record = new BorrowRecord(book.getId(), memberId, issueDate, dueDate);</span>
+<span class="fc" id="L67">        borrowRepo.save(record);</span>
+
+<span class="fc" id="L69">        book.setAvailableCopies(book.getAvailableCopies() - 1);</span>
+<span class="fc" id="L70">        bookRepo.update(book);</span>
+
+<span class="fc" id="L72">        return record;</span>
+    }
+
+    public ReturnResult returnBook(int memberId, String isbn) {
+<span class="fc" id="L76">        Book book = bookRepo.findByIsbn(isbn)</span>
+<span class="pc" id="L77">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Book not found with ISBN: &quot; + isbn));</span>
+
+<span class="fc" id="L79">        BorrowRecord record = borrowRepo.findActiveByBookAndMember(book.getId(), memberId)</span>
+<span class="pc" id="L80">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;No active borrow record found for this book and member.&quot;));</span>
+
+<span class="fc" id="L82">        record.setReturnDate(LocalDate.now());</span>
+<span class="fc" id="L83">        record.setReturned(true);</span>
+<span class="fc" id="L84">        borrowRepo.update(record);</span>
+
+<span class="fc" id="L86">        book.setAvailableCopies(book.getAvailableCopies() + 1);</span>
+<span class="fc" id="L87">        bookRepo.update(book);</span>
+
+<span class="fc" id="L89">        double fineAmount = 0;</span>
+<span class="fc" id="L90">        long daysOverdue = ChronoUnit.DAYS.between(record.getDueDate(), LocalDate.now());</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (daysOverdue &gt; 0) {</span>
+<span class="fc" id="L92">            Member member = memberRepo.findById(memberId).orElseThrow();</span>
+<span class="fc" id="L93">            FineCalculator calculator = new FineCalculator(member.getMemberType());</span>
+<span class="fc" id="L94">            fineAmount = calculator.calculate(daysOverdue);</span>
+<span class="fc" id="L95">            Fine fine = new Fine(record.getId(), memberId, fineAmount);</span>
+<span class="fc" id="L96">            fineRepo.save(fine);</span>
+        }
+
+<span class="fc" id="L99">        notifier.notifyBookAvailable(book.getId(), book.getTitle());</span>
+
+<span class="fc" id="L101">        return new ReturnResult(record, fineAmount, daysOverdue);</span>
+    }
+
+    public Reservation reserveBook(int memberId, String isbn) {
+<span class="fc" id="L105">        memberRepo.findById(memberId)</span>
+<span class="pc" id="L106">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Member not found: &quot; + memberId));</span>
+
+<span class="fc" id="L108">        Book book = bookRepo.findByIsbn(isbn)</span>
+<span class="pc" id="L109">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Book not found with ISBN: &quot; + isbn));</span>
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (book.getAvailableCopies() &gt; 0) {</span>
+<span class="fc" id="L112">            throw new IllegalStateException(&quot;Book is available — issue it directly instead of reserving.&quot;);</span>
+        }
+
+<span class="fc" id="L115">        Reservation reservation = new Reservation(book.getId(), memberId);</span>
+<span class="fc" id="L116">        return reservationRepo.save(reservation);</span>
+    }
+
+    public List&lt;BorrowRecord&gt; getMemberHistory(int memberId) {
+<span class="fc" id="L120">        return borrowRepo.findByMemberId(memberId);</span>
+    }
+
+    public List&lt;Reservation&gt; getMemberReservations(int memberId) {
+<span class="nc" id="L124">        return reservationRepo.findByMemberId(memberId);</span>
+    }
+
+    public void fulfillReservation(int reservationId) {
+<span class="nc" id="L128">        Reservation res = reservationRepo.findById(reservationId)</span>
+<span class="nc" id="L129">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Reservation not found&quot;));</span>
+<span class="nc" id="L130">        res.setFulfilled(true);</span>
+<span class="nc" id="L131">        reservationRepo.update(res);</span>
+<span class="nc" id="L132">    }</span>
+
+<span class="fc" id="L134">    public record ReturnResult(BorrowRecord record, double fineAmount, long daysOverdue) {}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
