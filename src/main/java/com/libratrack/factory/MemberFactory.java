@@ -7,10 +7,10 @@ import com.libratrack.model.Student;
 
 public class MemberFactory {
 
-    public static Member createMember(MemberType type, String name, String email, String phone) {
+    public static Member createMember(MemberType type, String name, String email, String phone, String passwordHash) {
         return switch (type) {
-            case STUDENT -> new Student(name, email, phone);
-            case FACULTY -> new Faculty(name, email, phone);
+            case STUDENT -> new Student(name, email, phone, passwordHash);
+            case FACULTY -> new Faculty(name, email, phone, passwordHash);
         };
     }
 }

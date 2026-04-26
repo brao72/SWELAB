@@ -6,6 +6,7 @@ export default function Login({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [memberId, setMemberId] = useState('')
+  const [memberPassword, setMemberPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -18,7 +19,7 @@ export default function Login({ onLogin }) {
       if (mode === 'librarian') {
         session = await auth.loginLibrarian(username, password)
       } else {
-        session = await auth.loginMember(memberId)
+        session = await auth.loginMember(memberId, memberPassword)
       }
       onLogin(session)
     } catch (err) {
@@ -81,6 +82,16 @@ export default function Login({ onLogin }) {
                 value={memberId}
                 onChange={(e) => setMemberId(e.target.value)}
                 placeholder="Enter your member ID"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={memberPassword}
+                onChange={(e) => setMemberPassword(e.target.value)}
+                placeholder="Enter your password"
                 required
               />
             </div>

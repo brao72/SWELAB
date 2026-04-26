@@ -118,7 +118,9 @@ public class LibraTrackApp {
                 } else if (choice.equals("2")) {
                     System.out.print("Member ID: ");
                     int memberId = Integer.parseInt(scanner.nextLine().trim());
-                    session = authService.loginMember(memberId);
+                    System.out.print("Password: ");
+                    String memberPass = scanner.nextLine().trim();
+                    session = authService.loginMember(memberId, memberPass);
                 } else {
                     System.out.println("Invalid option.");
                     continue;

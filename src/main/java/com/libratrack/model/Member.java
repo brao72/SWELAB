@@ -24,17 +24,21 @@ public abstract class Member {
     @Column(name = "member_type", insertable = false, updatable = false)
     private MemberType memberType;
 
+    @Column(name = "password_hash", length = 64)
+    private String passwordHash;
+
     @Column(name = "is_active")
     private boolean isActive;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public Member(String name, String email, String phone, MemberType memberType) {
+    public Member(String name, String email, String phone, MemberType memberType, String passwordHash) {
         this.name = name;
         this.email = email;
         this.phone = phone;
         this.memberType = memberType;
+        this.passwordHash = passwordHash;
         this.isActive = true;
         this.createdAt = LocalDateTime.now();
     }
@@ -61,6 +65,9 @@ public abstract class Member {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

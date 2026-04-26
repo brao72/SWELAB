@@ -15,8 +15,8 @@ public class MemberService {
         this.memberRepo = memberRepo;
     }
 
-    public Member registerMember(MemberType type, String name, String email, String phone) {
-        Member member = MemberFactory.createMember(type, name, email, phone);
+    public Member registerMember(MemberType type, String name, String email, String phone, String passwordHash) {
+        Member member = MemberFactory.createMember(type, name, email, phone, passwordHash);
         return memberRepo.save(member);
     }
 

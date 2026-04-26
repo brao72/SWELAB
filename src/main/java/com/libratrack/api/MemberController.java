@@ -2,6 +2,7 @@ package com.libratrack.api;
 
 import com.libratrack.model.Member;
 import com.libratrack.model.MemberType;
+import com.libratrack.service.AuthService;
 import com.libratrack.service.MemberService;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -33,8 +34,12 @@ public class MemberController {
 
     private void registerMember(Context ctx) {
         RegisterRequest req = ctx.bodyAsClass(RegisterRequest.class);
+        if (req.password() == null || req.password().isBlank()) {
+            throw new IllegalArgumentException("Password is required.");
+        }
         MemberType type = MemberType.valueOf(req.type().toUpperCase());
-        Member member = memberService.registerMember(type, req.name(), req.email(), req.phone());
+        String passwordHash = AuthService.hashPassword(req.password());
+        Member member = memberService.registerMember(type, req.name(), req.email(), req.phone(), passwordHash);
         ctx.status(201).json(member);
     }
 
@@ -44,5 +49,5 @@ public class MemberController {
         ctx.status(204);
     }
 
-    public record RegisterRequest(String type, String name, String email, String phone) {}
+    public record RegisterRequest(String type, String name, String email, String phone, String password) {}
 }

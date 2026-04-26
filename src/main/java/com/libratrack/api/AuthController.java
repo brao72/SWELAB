@@ -23,7 +23,7 @@ public class AuthController {
         if ("librarian".equalsIgnoreCase(req.type())) {
             session = authService.loginLibrarian(req.username(), req.password());
         } else if ("member".equalsIgnoreCase(req.type())) {
-            session = authService.loginMember(req.memberId());
+            session = authService.loginMember(req.memberId(), req.password());
         } else {
             ctx.status(400).json(new ApiServer.ErrorResponse("Invalid login type. Use 'librarian' or 'member'."));
             return;

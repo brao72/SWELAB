@@ -9,8 +9,8 @@ public class Student extends Member {
     private static final int BORROW_LIMIT = 3;
     private static final int LOAN_PERIOD_DAYS = 14;
 
-    public Student(String name, String email, String phone) {
-        super(name, email, phone, MemberType.STUDENT);
+    public Student(String name, String email, String phone, String passwordHash) {
+        super(name, email, phone, MemberType.STUDENT, passwordHash);
     }
 
     public Student() {}

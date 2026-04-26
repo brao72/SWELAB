@@ -4,7 +4,7 @@ import { members } from '../api'
 export default function Members() {
   const [memberList, setMemberList] = useState([])
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ type: 'STUDENT', name: '', email: '', phone: '' })
+  const [form, setForm] = useState({ type: 'STUDENT', name: '', email: '', phone: '', password: '' })
   const [error, setError] = useState('')
   const [msg, setMsg] = useState('')
 
@@ -25,7 +25,7 @@ export default function Members() {
     try {
       const result = await members.register(form)
       setMsg(`Member registered! ID: ${result.id}`)
-      setForm({ type: 'STUDENT', name: '', email: '', phone: '' })
+      setForm({ type: 'STUDENT', name: '', email: '', phone: '', password: '' })
       setShowAdd(false)
       loadMembers()
     } catch (err) {
@@ -79,6 +79,12 @@ export default function Members() {
             <div className="form-group">
               <label>Phone</label>
               <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
             </div>
           </div>
           <button type="submit" className="btn btn-primary">Register</button>

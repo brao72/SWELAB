@@ -2,6 +2,7 @@ package com.libratrack.command;
 
 import com.libratrack.model.Member;
 import com.libratrack.model.MemberType;
+import com.libratrack.service.AuthService;
 import com.libratrack.service.MemberService;
 
 import java.util.Scanner;
@@ -26,6 +27,8 @@ public class RegisterMemberCommand implements Command {
         String phone = scanner.nextLine().trim();
         System.out.print("Type (STUDENT/FACULTY): ");
         String typeStr = scanner.nextLine().trim().toUpperCase();
+        System.out.print("Password: ");
+        String password = scanner.nextLine().trim();
 
         MemberType type;
         try {
@@ -35,7 +38,8 @@ public class RegisterMemberCommand implements Command {
             return;
         }
 
-        Member member = memberService.registerMember(type, name, email, phone);
+        String passwordHash = AuthService.hashPassword(password);
+        Member member = memberService.registerMember(type, name, email, phone, passwordHash);
         System.out.printf("Member registered! ID: %d, Type: %s, Borrow Limit: %d, Loan Period: %d days%n",
                 member.getId(), type, member.getBorrowLimit(), member.getLoanPeriodDays());
     }

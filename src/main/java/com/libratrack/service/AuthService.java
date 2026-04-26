@@ -28,11 +28,15 @@ public class AuthService {
         return new Session(Role.LIBRARIAN, lib.getId(), lib.getName());
     }
 
-    public Session loginMember(int memberId) {
+    public Session loginMember(int memberId, String password) {
         Member member = memberRepo.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Member not found: " + memberId));
         if (!member.isActive()) {
             throw new IllegalArgumentException("Member account is inactive.");
+        }
+        String hash = hashPassword(password);
+        if (!hash.equals(member.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid password.");
         }
         return new Session(Role.MEMBER, member.getId(), member.getName());
     }

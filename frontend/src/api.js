@@ -22,10 +22,10 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify({ type: 'librarian', username, password }),
     }),
-  loginMember: (memberId) =>
+  loginMember: (memberId, password) =>
     request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ type: 'member', memberId: Number(memberId) }),
+      body: JSON.stringify({ type: 'member', memberId: Number(memberId), password }),
     }),
 };
 
