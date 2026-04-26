@@ -5,6 +5,7 @@ export default function Borrow({ session }) {
   const [action, setAction] = useState('issue')
   const [memberId, setMemberId] = useState(session.role === 'MEMBER' ? session.userId : '')
   const [isbn, setIsbn] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [historyId, setHistoryId] = useState(session.role === 'MEMBER' ? session.userId : '')
   const [history, setHistory] = useState(null)
   const [result, setResult] = useState(null)
@@ -19,7 +20,7 @@ export default function Borrow({ session }) {
     try {
       let res
       if (action === 'issue') {
-        res = await borrow.issue(memberId, isbn)
+        res = await borrow.issue(memberId, isbn, dueDate)
         setResult({ type: 'success', text: `Book issued! Due date: ${res.dueDate}` })
       } else if (action === 'return') {
         res = await borrow.returnBook(memberId, isbn)
@@ -32,6 +33,7 @@ export default function Borrow({ session }) {
         setResult({ type: 'success', text: `Reservation placed! ID: ${res.id}` })
       }
       setIsbn('')
+      setDueDate('')
     } catch (err) {
       setError(err.message)
     }
@@ -94,6 +96,16 @@ export default function Borrow({ session }) {
                 required
               />
             </div>
+            {action === 'issue' && (
+              <div className="form-group">
+                <label>Due Date (optional)</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                />
+              </div>
+            )}
           </div>
           <button type="submit" className="btn btn-primary">
             {action === 'issue' ? 'Issue Book' : action === 'return' ? 'Return Book' : 'Reserve Book'}

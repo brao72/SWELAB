@@ -6,6 +6,7 @@ import com.libratrack.service.BorrowService;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class BorrowController {
@@ -24,7 +25,8 @@ public class BorrowController {
 
     private void issueBook(Context ctx) {
         BorrowRequest req = ctx.bodyAsClass(BorrowRequest.class);
-        BorrowRecord record = borrowService.issueBook(req.memberId(), req.isbn());
+        LocalDate dueDate = req.dueDate() != null ? LocalDate.parse(req.dueDate()) : null;
+        BorrowRecord record = borrowService.issueBook(req.memberId(), req.isbn(), dueDate);
         ctx.status(201).json(record);
     }
 
@@ -50,6 +52,6 @@ public class BorrowController {
         ctx.json(history);
     }
 
-    public record BorrowRequest(int memberId, String isbn) {}
+    public record BorrowRequest(int memberId, String isbn, String dueDate) {}
     public record ReturnResponse(int recordId, double fineAmount, long daysOverdue) {}
 }

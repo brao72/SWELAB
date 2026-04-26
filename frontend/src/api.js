@@ -47,10 +47,10 @@ export const members = {
 };
 
 export const borrow = {
-  issue: (memberId, isbn) =>
+  issue: (memberId, isbn, dueDate) =>
     request('/borrow/issue', {
       method: 'POST',
-      body: JSON.stringify({ memberId: Number(memberId), isbn }),
+      body: JSON.stringify({ memberId: Number(memberId), isbn, dueDate: dueDate || null }),
     }),
   returnBook: (memberId, isbn) =>
     request('/borrow/return', {

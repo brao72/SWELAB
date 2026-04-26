@@ -31,6 +31,10 @@ public class BorrowService {
     }
 
     public BorrowRecord issueBook(int memberId, String isbn) {
+        return issueBook(memberId, isbn, null);
+    }
+
+    public BorrowRecord issueBook(int memberId, String isbn, LocalDate customDueDate) {
         Member member = memberRepo.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("Member not found: " + memberId));
 
@@ -58,7 +62,7 @@ public class BorrowService {
         }
 
         LocalDate issueDate = LocalDate.now();
-        LocalDate dueDate = issueDate.plusDays(member.getLoanPeriodDays());
+        LocalDate dueDate = customDueDate != null ? customDueDate : issueDate.plusDays(member.getLoanPeriodDays());
         BorrowRecord record = new BorrowRecord(book.getId(), memberId, issueDate, dueDate);
         borrowRepo.save(record);
 
