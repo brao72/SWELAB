@@ -508,3 +508,19 @@ td code {
 .notif-item:last-child {
   border-bottom: none;
 }
+
+.notif-dismiss {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-light);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.notif-dismiss:hover {
+  background: var(--bg);
+  color: var(--danger);
+}

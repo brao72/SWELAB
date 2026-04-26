@@ -7,6 +7,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 
 import java.util.List;
+import java.util.Optional;
 
 public class PgReservationRepository implements ReservationRepository {
 
@@ -25,6 +26,17 @@ public class PgReservationRepository implements ReservationRepository {
             em.close();
         }
         return reservation;
+    }
+
+    @Override
+    public Optional<Reservation> findById(int id) {
+        EntityManager em = DatabaseConnection.getInstance().getEntityManager();
+        try {
+            Reservation res = em.find(Reservation.class, id);
+            return Optional.ofNullable(res);
+        } finally {
+            em.close();
+        }
     }
 
     @Override

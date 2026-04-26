@@ -26,6 +26,7 @@ public class BorrowController {
         app.post("/api/borrow/reserve", this::reserveBook);
         app.get("/api/borrow/history/{memberId}", this::getMemberHistory);
         app.get("/api/borrow/notifications/{memberId}", this::getNotifications);
+        app.post("/api/borrow/notifications/{id}/dismiss", this::dismissNotification);
     }
 
     private void issueBook(Context ctx) {
@@ -70,6 +71,12 @@ public class BorrowController {
                 })
                 .toList();
         ctx.json(notifications);
+    }
+
+    private void dismissNotification(Context ctx) {
+        int reservationId = Integer.parseInt(ctx.pathParam("id"));
+        borrowService.fulfillReservation(reservationId);
+        ctx.status(204);
     }
 
     public record BorrowRequest(int memberId, String isbn, String dueDate) {}

@@ -64,6 +64,7 @@ export const borrow = {
     }),
   history: (memberId) => request(`/borrow/history/${memberId}`),
   notifications: (memberId) => request(`/borrow/notifications/${memberId}`),
+  dismissNotification: (reservationId) => request(`/borrow/notifications/${reservationId}/dismiss`, { method: 'POST' }),
 };
 
 export const fines = {

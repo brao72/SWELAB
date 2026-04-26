@@ -124,5 +124,12 @@ public class BorrowService {
         return reservationRepo.findByMemberId(memberId);
     }
 
+    public void fulfillReservation(int reservationId) {
+        Reservation res = reservationRepo.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+        res.setFulfilled(true);
+        reservationRepo.update(res);
+    }
+
     public record ReturnResult(BorrowRecord record, double fineAmount, long daysOverdue) {}
 }

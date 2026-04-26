@@ -27,6 +27,11 @@ export default function Notifications({ memberId }) {
             notes.map(n => (
               <div key={n.reservationId} className="notif-item">
                 <strong>{n.bookTitle}</strong> is now available!
+                <button className="notif-dismiss" onClick={() => {
+                  borrow.dismissNotification(n.reservationId).then(() => {
+                    setNotes(notes.filter(x => x.reservationId !== n.reservationId))
+                  })
+                }}>Dismiss</button>
               </div>
             ))
           )}
