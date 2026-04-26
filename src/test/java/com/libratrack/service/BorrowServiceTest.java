@@ -38,7 +38,7 @@ class BorrowServiceTest {
 
     @Test
     void issueBook_success() {
-        Student student = new Student("Alice", "a@b.com", "123");
+        Student student = new Student("Alice", "a@b.com", "123", "hash");
         student.setId(1);
         Book book = new Book("Test", "Auth", "978-111", "Genre", 3);
         book.setId(10);
@@ -69,7 +69,7 @@ class BorrowServiceTest {
 
     @Test
     void issueBook_inactiveMember_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         student.setActive(false);
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
@@ -79,7 +79,7 @@ class BorrowServiceTest {
 
     @Test
     void issueBook_tooManyUnpaidFines_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
         when(fineRepo.getTotalUnpaidByMemberId(1)).thenReturn(60.0); // > 50
 
@@ -91,7 +91,7 @@ class BorrowServiceTest {
 
     @Test
     void issueBook_borrowLimitReached_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         student.setId(1);
         Book book = new Book("T", "A", "978-111", "G", 5);
 
@@ -108,7 +108,7 @@ class BorrowServiceTest {
 
     @Test
     void issueBook_noCopiesAvailable_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         student.setId(1);
         Book book = new Book("T", "A", "978-111", "G", 1);
         book.setAvailableCopies(0);
@@ -150,7 +150,7 @@ class BorrowServiceTest {
         book.setAvailableCopies(2);
         // Due date was 5 days ago
         BorrowRecord record = new BorrowRecord(10, 1, LocalDate.now().minusDays(19), LocalDate.now().minusDays(5));
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
 
         when(bookRepo.findByIsbn("978-111")).thenReturn(Optional.of(book));
         when(borrowRepo.findActiveByBookAndMember(10, 1)).thenReturn(Optional.of(record));
@@ -182,7 +182,7 @@ class BorrowServiceTest {
 
     @Test
     void reserveBook_success() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         Book book = new Book("T", "A", "978-111", "G", 1);
         book.setId(10);
         book.setAvailableCopies(0);
@@ -199,7 +199,7 @@ class BorrowServiceTest {
 
     @Test
     void reserveBook_bookAvailable_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         Book book = new Book("T", "A", "978-111", "G", 1);
         book.setAvailableCopies(1); // available - should issue, not reserve
 

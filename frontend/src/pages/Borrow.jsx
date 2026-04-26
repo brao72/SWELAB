@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { borrow } from '../api'
 
 export default function Borrow({ session }) {
-  const [action, setAction] = useState('issue')
+  const [action, setAction] = useState(session.role === 'MEMBER' ? 'reserve' : 'issue')
   const [memberId, setMemberId] = useState(session.role === 'MEMBER' ? session.userId : '')
   const [isbn, setIsbn] = useState('')
   const [dueDate, setDueDate] = useState('')

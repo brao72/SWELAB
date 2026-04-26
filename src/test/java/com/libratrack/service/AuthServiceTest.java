@@ -60,11 +60,12 @@ class AuthServiceTest {
 
     @Test
     void loginMember_success() {
-        Student student = new Student("Alice", "a@b.com", "123");
+        String hash = AuthService.hashPassword("secret");
+        Student student = new Student("Alice", "a@b.com", "123", hash);
         student.setId(5);
         when(memberRepo.findById(5)).thenReturn(Optional.of(student));
 
-        Session session = authService.loginMember(5);
+        Session session = authService.loginMember(5, "secret");
 
         assertEquals(Role.MEMBER, session.getRole());
         assertEquals(5, session.getUserId());
@@ -72,21 +73,32 @@ class AuthServiceTest {
     }
 
     @Test
+    void loginMember_wrongPassword_throws() {
+        String hash = AuthService.hashPassword("secret");
+        Student student = new Student("Alice", "a@b.com", "123", hash);
+        student.setId(5);
+        when(memberRepo.findById(5)).thenReturn(Optional.of(student));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.loginMember(5, "wrong"));
+    }
+
+    @Test
     void loginMember_notFound_throws() {
         when(memberRepo.findById(99)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
-                () -> authService.loginMember(99));
+                () -> authService.loginMember(99, "pass"));
     }
 
     @Test
     void loginMember_inactive_throws() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         student.setActive(false);
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
         assertThrows(IllegalArgumentException.class,
-                () -> authService.loginMember(1));
+                () -> authService.loginMember(1, "pass"));
     }
 
     @Test

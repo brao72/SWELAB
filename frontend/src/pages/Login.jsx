@@ -75,26 +75,28 @@ export default function Login({ onLogin }) {
               </div>
             </>
           ) : (
-            <div className="form-group">
-              <label>Member ID</label>
-              <input
-                type="number"
-                value={memberId}
-                onChange={(e) => setMemberId(e.target.value)}
-                placeholder="Enter your member ID"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={memberPassword}
-                onChange={(e) => setMemberPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
+            <>
+              <div className="form-group">
+                <label>Member ID</label>
+                <input
+                  type="number"
+                  value={memberId}
+                  onChange={(e) => setMemberId(e.target.value)}
+                  placeholder="Enter your member ID"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={memberPassword}
+                  onChange={(e) => setMemberPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </>
           )}
 
           {error && <div className="error-msg">{error}</div>}

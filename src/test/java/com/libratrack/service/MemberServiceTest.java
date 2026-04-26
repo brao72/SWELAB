@@ -32,7 +32,7 @@ class MemberServiceTest {
     void registerStudent_success() {
         when(memberRepo.save(any(Member.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Member member = memberService.registerMember(MemberType.STUDENT, "Alice", "alice@u.edu", "123");
+        Member member = memberService.registerMember(MemberType.STUDENT, "Alice", "alice@u.edu", "123", "hash");
 
         assertInstanceOf(Student.class, member);
         assertEquals("Alice", member.getName());
@@ -43,7 +43,7 @@ class MemberServiceTest {
     void registerFaculty_success() {
         when(memberRepo.save(any(Member.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Member member = memberService.registerMember(MemberType.FACULTY, "Dr. X", "x@u.edu", "456");
+        Member member = memberService.registerMember(MemberType.FACULTY, "Dr. X", "x@u.edu", "456", "hash");
 
         assertInstanceOf(Faculty.class, member);
         verify(memberRepo).save(any(Faculty.class));
@@ -51,7 +51,7 @@ class MemberServiceTest {
 
     @Test
     void findById_found() {
-        Student student = new Student("A", "a@b.com", "123");
+        Student student = new Student("A", "a@b.com", "123", "hash");
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
         assertTrue(memberService.findById(1).isPresent());
@@ -66,14 +66,14 @@ class MemberServiceTest {
 
     @Test
     void listAllMembers_delegatesToRepo() {
-        when(memberRepo.findAll()).thenReturn(List.of(new Student("A", "a@b.com", "1")));
+        when(memberRepo.findAll()).thenReturn(List.of(new Student("A", "a@b.com", "1", "hash")));
 
         assertEquals(1, memberService.listAllMembers().size());
     }
 
     @Test
     void deactivateMember_success() {
-        Student student = new Student("A", "a@b.com", "1");
+        Student student = new Student("A", "a@b.com", "1", "hash");
         assertTrue(student.isActive());
         when(memberRepo.findById(1)).thenReturn(Optional.of(student));
 
