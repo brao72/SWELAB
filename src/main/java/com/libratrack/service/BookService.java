@@ -30,6 +30,10 @@ public class BookService {
         return bookRepo.findAll();
     }
 
+    public Optional<Book> findById(int id) {
+        return bookRepo.findById(id);
+    }
+
     public Optional<Book> findByIsbn(String isbn) {
         return bookRepo.findByIsbn(isbn);
     }

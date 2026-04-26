@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import Notifications from './Notifications'
 
 export default function Navbar({ session, onLogout }) {
   return (
@@ -14,6 +15,7 @@ export default function Navbar({ session, onLogout }) {
         <NavLink to="/fines">Fines</NavLink>
       </div>
       <div className="nav-user">
+        {session.role === 'MEMBER' && <Notifications memberId={session.userId} />}
         <span>{session.displayName}</span>
         <button onClick={onLogout} className="btn btn-outline btn-sm">Logout</button>
       </div>

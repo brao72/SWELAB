@@ -63,6 +63,7 @@ export const borrow = {
       body: JSON.stringify({ memberId: Number(memberId), isbn }),
     }),
   history: (memberId) => request(`/borrow/history/${memberId}`),
+  notifications: (memberId) => request(`/borrow/notifications/${memberId}`),
 };
 
 export const fines = {

@@ -120,5 +120,9 @@ public class BorrowService {
         return borrowRepo.findByMemberId(memberId);
     }
 
+    public List<Reservation> getMemberReservations(int memberId) {
+        return reservationRepo.findByMemberId(memberId);
+    }
+
     public record ReturnResult(BorrowRecord record, double fineAmount, long daysOverdue) {}
 }

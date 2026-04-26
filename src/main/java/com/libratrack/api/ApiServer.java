@@ -59,7 +59,7 @@ public class ApiServer {
         AuthController authController = new AuthController(authService);
         BookController bookController = new BookController(bookService);
         MemberController memberController = new MemberController(memberService);
-        BorrowController borrowController = new BorrowController(borrowService);
+        BorrowController borrowController = new BorrowController(borrowService, bookService);
         FineController fineController = new FineController(fineService);
 
         authController.registerRoutes(app);

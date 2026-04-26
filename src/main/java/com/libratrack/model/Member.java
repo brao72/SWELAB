@@ -1,5 +1,6 @@
 package com.libratrack.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -24,6 +25,7 @@ public abstract class Member {
     @Column(name = "member_type", insertable = false, updatable = false)
     private MemberType memberType;
 
+    @JsonIgnore
     @Column(name = "password_hash", length = 64)
     private String passwordHash;
 

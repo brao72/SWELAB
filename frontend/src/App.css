@@ -448,3 +448,63 @@ td code {
     gap: 0;
   }
 }
+
+/* Notifications */
+.notif-wrapper {
+  position: relative;
+}
+
+.notif-bell {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.notif-bell:hover {
+  background: var(--bg);
+}
+
+.notif-badge {
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.notif-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.notif-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
